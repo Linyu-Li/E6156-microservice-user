@@ -4,7 +4,7 @@ import database_services.RDBService as db_service
 def t1():
 
     res = db_service.get_by_prefix(
-        "imdbfixed", "names_basic", "primary_name", "Tom H"
+        "imdbfixed", "name_basic", "primaryname", "Tom H" #schema_name, table_name, column, value (not sure if correspond but ukwim)
     )
     print("t1 resule = ", res)
 

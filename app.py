@@ -38,9 +38,9 @@ def get_users():
     return rsp
 
 
-@app.route('/<db_schema>/<table_name>/<column_name>/<prefix>')
-def get_by_prefix(db_schema, table_name, column_name, prefix):
-    res = d_service.get_by_prefix(db_schema, table_name, column_name, prefix)
+@app.route('/schema_test/names_basic_recent/nconst/nm')
+def get_by_prefix(schema_test, names_basic_recent, column_name, prefix):
+    res = d_service.get_by_prefix(schema_test, names_basic_recent, column_name, prefix)
     rsp = Response(json.dumps(res, default=str), status=200, content_type="application/json")
     return rsp
 
