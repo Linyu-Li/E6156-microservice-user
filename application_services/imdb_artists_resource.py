@@ -1,14 +1,22 @@
-from application_services.BaseApplicationResource import BaseApplicationResource
-import database_services.RDBService as d_service
+from application_services.BaseApplicationResource import BaseRDBApplicationResource
+from database_services.RDBService import RDBService
 
 
-class IMDBArtistResource(BaseApplicationResource):
+class IMDBArtistResource(BaseRDBApplicationResource):
 
     def __init__(self):
         super().__init__()
 
     @classmethod
+    def get_links(cls, resource_data):
+        pass
+
+    @classmethod
+    def get_data_resource_info(cls):
+        pass
+
+    @classmethod
     def get_by_name_prefix(cls, name_prefix):
-        res = d_service.get_by_prefix("IMDBFixed", "name_basics",
+        res = RDBService.get_by_prefix("IMDBFixed", "name_basics",
                                       "primaryName", name_prefix)
         return res

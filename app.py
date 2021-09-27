@@ -1,22 +1,18 @@
 from flask import Flask, Response
-import database_services.RDBService as d_service
 from flask_cors import CORS
 import json
-
 import logging
+
+from application_services.imdb_artists_resource import IMDBArtistResource
+from application_services.UsersResource.user_service import UserResource
+from database_services.RDBService import RDBService as RDBService
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-from application_services.imdb_artists_resource import IMDBArtistResource
-from application_services.UsersResource.user_service import UserResource
-
-
 app = Flask(__name__)
 CORS(app)
-
-
 
 
 @app.route('/')
@@ -38,9 +34,9 @@ def get_users():
     return rsp
 
 
-@app.route('/schema_test/names_basic_recent/nconst/nm')
-def get_by_prefix(schema_test, names_basic_recent, column_name, prefix):
-    res = d_service.get_by_prefix(schema_test, names_basic_recent, column_name, prefix)
+@app.route('/<db_schema>/<table_name>/<column_name>/<prefix>')
+def get_by_prefix(db_schema, table_name, column_name, prefix):
+    res = RDBService.get_by_prefix(db_schema, table_name, column_name, prefix)
     rsp = Response(json.dumps(res, default=str), status=200, content_type="application/json")
     return rsp
 

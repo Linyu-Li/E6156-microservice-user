@@ -17,7 +17,20 @@ def t2():
     print("t2 resuls = ", res)
 
 
+def t3():
 
-t2()
+    res = db_service.create(
+        "aaaaf21", "addresses",
+            {
+                "address1": "520 w 120th St",
+                "city": "New York",
+                "region": "NY",
+                "country": "USA",
+                "postal_code": "10027"
+            })
+    print("t3: res = ", res)
+
+#t2()
+t3()
 
 
