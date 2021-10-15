@@ -63,6 +63,107 @@ class RDBService:
 
         return res
 
+
+
+    @classmethod
+    def get_all(cls, db_schema, table_name):
+
+        conn = RDBService._get_db_connection()
+        cur = conn.cursor()
+
+        sql = "select * from " + db_schema + "." + table_name
+        print("SQL Statement = " + cur.mogrify(sql, None))
+
+        res = cur.execute(sql)
+        res = cur.fetchall()
+
+        conn.close()
+
+        return res
+
+
+    @classmethod
+    def get_by_value(cls, db_schema, table_name, column_name, value):
+
+        conn = RDBService._get_db_connection()
+        cur = conn.cursor()
+
+        sql = "select * from " + db_schema + "." + table_name + " where " + \
+              column_name + " = " + value
+        print("SQL Statement = " + cur.mogrify(sql, None))
+
+        res = cur.execute(sql)
+        res = cur.fetchall()
+
+        conn.close()
+
+        return res
+
+    @classmethod
+    def update_by_column(cls, db_schema, table_name, refer_column, refer_value, column_name, value):
+
+        conn = RDBService._get_db_connection()
+        cur = conn.cursor()
+
+        sql = "update " + db_schema + "." + table_name + " set " + \
+              column_name + " = " + "'" + value + "'" + " where " + refer_column + " = " + refer_value
+        print("SQL Statement = " + cur.mogrify(sql, None))
+
+        res = cur.execute(sql)
+        res = cur.fetchall()
+
+        conn.close()
+
+        return res
+
+    @classmethod
+    def delete_by_column(cls, db_schema, table_name, column_name, value):
+
+        conn = RDBService._get_db_connection()
+        cur = conn.cursor()
+
+        sql = "delete from " + db_schema + "." + table_name + " where " + \
+              column_name + " = " + value
+        print("SQL Statement = " + cur.mogrify(sql, None))
+
+        res = cur.execute(sql)
+        res = cur.fetchall()
+
+        conn.close()
+
+        return res
+
+    @classmethod
+    def insert(cls, db_schema, table_name, column_name_list, value_list):
+
+        conn = RDBService._get_db_connection()
+        cur = conn.cursor()
+
+        columns = ""
+        for index, name in enumerate(column_name_list):
+            if index != (len(column_name_list) - 1):
+                columns = columns + name + ', '
+            else:
+                columns = columns + name
+
+        values = ""
+        for index, value in enumerate(value_list):
+            if index != (len(value_list) - 1):
+                values = values + "'" + value + "'" + ', '
+            else:
+                values = values + "'" + value + "'"
+
+        sql = "insert into " + db_schema + "." + table_name + " (" + \
+              columns + ") " + " values " + " (" + values + ") "
+        print("SQL Statement = " + cur.mogrify(sql, None))
+
+        res = cur.execute(sql)
+        res = cur.fetchall()
+
+        conn.close()
+
+        return res
+
     @classmethod
     def get_where_clause_args(cls, template):
 
