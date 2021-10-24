@@ -2,7 +2,7 @@ from application_services.BaseApplicationResource import BaseRDBApplicationResou
 from database_services.RDBService import RDBService
 
 
-class IMDBArtistResource(BaseRDBApplicationResource):
+class UserResource(BaseRDBApplicationResource):
 
     def __init__(self):
         super().__init__()
@@ -17,6 +17,6 @@ class IMDBArtistResource(BaseRDBApplicationResource):
 
     @classmethod
     def get_by_name_prefix(cls, name_prefix):
-        res = RDBService.get_by_prefix("IMDBFixed", "name_basics",
+        res = RDBService.get_by_prefix("users", "User",
                                       "primaryName", name_prefix)
         return res

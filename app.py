@@ -1,4 +1,4 @@
-from flask import Flask, Response
+from flask import Flask, Response, request
 from flask_cors import CORS
 import json
 import logging
@@ -15,9 +15,23 @@ app = Flask(__name__)
 CORS(app)
 
 
-@app.route('/')
+@app.route('/', methods = ['POST', 'GET', 'PUT'])
 def hello_world():
+    # return '<u>Hello World!</u>'
+    # if request.method == 'POST':
+    #     pass
+    # elif request.method == 'GET':
+    #     pass
+    # elif request.method == 'PUT':
+    #     pass
     return '<u>Hello World!</u>'
+
+
+@app.route('/users', methods = ['GET', 'POST'])
+def users():
+    if request.method == 'POST':  # create user
+        pass
+
 
 
 @app.route('/imdb/artists/<prefix>')
