@@ -1,0 +1,260 @@
+swagger: "2.0"
+info:
+  description: "This is a sample server serving Lionmatch's users and address information. \n You can find out more about this server's code at [evilo/6156](https://github.com/evilo/6156/blob/master/app.py)."
+  version: "pre-alpha"
+  title: "LionMatch"
+  contact:
+    email: "developer@lionmatch.com"
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+# host: "petstore.swagger.io"
+basePath: "/"
+paths:
+  /users:
+    post:
+      tags:
+      - "users"
+      summary: "Create an user"
+      description: "This allows anyone to sign up as our user."
+      operationId: "createUser"
+      produces:
+      - "application/xml"
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Created user object"
+        required: true
+        schema:
+          $ref: "#/definitions/User"
+      responses:
+        default:
+          description: "successful operation"
+    get:
+      tags:
+      - "users"
+      summary: "get users"
+      description: "Retrieve user list"
+      operationId: "getusers"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "token"
+        in: "header"
+        description: "the authenticated token"
+        required: true
+        type: "string"
+      responses:
+        "200":
+          description: "successful operation"
+        "401":
+          description: "Invalid token"
+  /users/{user_id}:
+    get:
+      tags:
+      - "users"
+      operationId: "getuserbyID"
+      parameters:
+      - name: "token"
+        in: "header"
+        description: "the authenticated token"
+        required: true
+        type: "string"
+      - name: "user_id"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        "200":
+          description: "successful operation"
+        "401":
+          description: "Invalid token"
+        "404":
+          description: "User ID not found"
+    put:
+      tags:
+      - "users"
+      operationId: "updateUserbyID"
+      parameters:
+      - name: "token"
+        in: "header"
+        description: "the authenticated token"
+        required: true
+        type: "string"
+      - name: "user_id"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "data"
+        in: "body"
+        required: false
+        schema:
+          $ref: "#/definitions/User"
+      responses:
+        "200":
+          description: "successful operation"
+        "401":
+          description: "Invalid token"
+        "404":
+          description: "User ID not found"
+    delete:
+      tags:
+      - "users"
+      operationId: "deleteUserbyID"
+      parameters:
+      - name: "token"
+        in: "header"
+        description: "the authenticated token"
+        required: true
+        type: "string"
+      - name: "user_id"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        "200":
+          description: "successful operation"
+        "401":
+          description: "Invalid token"
+        "404":
+          description: "User ID not found"
+  
+  /address:
+    get:
+      tags:
+      - "address"
+      operationId: "get addresses"
+      parameters:
+      - name: "token"
+        in: "header"
+        description: "the authenticated token"
+        required: true
+        type: "string"
+      responses:
+        "200":
+          description: "successful operation"
+        "401":
+          description: "Invalid token"
+    post:
+      tags:
+      - "address"
+      operationId: "create addresses"
+      parameters:
+      - name: "token"
+        in: "header"
+        description: "the authenticated token"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "body"
+        description: "Created address object"
+        required: true
+        schema:
+          $ref: "#/definitions/Address"
+      responses:
+        "200":
+          description: "successful operation"
+        "401":
+          description: "Invalid token"
+        "400":
+          description: "Bad request"
+  
+  /address/{address_id}:
+    get:
+      tags:
+      - "address"
+      operationId: "getaddressbyID"
+      parameters:
+      - name: "token"
+        in: "header"
+        description: "the authenticated token"
+        required: true
+        type: "string"
+      - name: "address_id"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        "200":
+          description: "successful operation"
+        "401":
+          description: "Invalid token"
+        "404":
+          description: "Address ID not found"
+    put:
+      tags:
+      - "address"
+      operationId: "updateaddressbyID"
+      parameters:
+      - name: "token"
+        in: "header"
+        description: "the authenticated token"
+        required: true
+        type: "string"
+      - name: "address_id"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "data"
+        in: "body"
+        required: false
+        schema:
+          $ref: "#/definitions/Address"
+        
+      responses:
+        "200":
+          description: "successful operation"
+        "401":
+          description: "Invalid token"
+        "404":
+          description: "Address ID not found"
+    delete:
+      tags:
+      - "address"
+      operationId: "deleteaddressbyID"
+      parameters:
+      - name: "token"
+        in: "header"
+        description: "the authenticated token"
+        required: true
+        type: "string"
+      - name: "address_id"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        "200":
+          description: "successful operation"
+        "401":
+          description: "Invalid token"
+        "404":
+          description: "Address ID not found"
+
+definitions:
+  Address:
+    type: "object"
+    properties:
+      addressID:
+        type: "integer"
+        format: "int32"
+  User:
+    type: "object"
+    properties:
+      username:
+        type: "string"
+      firstName:
+        type: "string"
+      lastName:
+        type: "string"
+      email:
+        type: "string"
+      password:
+        type: "string"
+      phone:
+        type: "string"
+      status:
+        type: "string"
+        description: "User Status"
+    xml:
+      name: "User"
