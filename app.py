@@ -2,6 +2,7 @@ from flask import Flask, Response, request
 from flask_cors import CORS
 import json
 import logging
+import requests
 
 from application_services.user_resource import UserResource
 from application_services.address_resource import AddressResource
@@ -14,8 +15,7 @@ app = Flask(__name__)
 CORS(app)
 
 
-
-@app.route('/', methods = ['POST', 'GET', 'PUT'])
+@app.route('/', methods=['POST', 'GET', 'PUT'])
 def hello_world():
     return '<u>Hello World!</u>'
 
@@ -46,6 +46,7 @@ def specific_user(user_id):
         res = UserResource.get_by_user_id(user_id)
         rsp = Response(json.dumps(res, default=str), status=200, content_type="application/json")
         return rsp
+
     elif request.method == 'PUT':  # update user info, currently only support modifying one column at a time
         req_data = request.get_json()
         column_name = list(req_data.items())[0][0]
@@ -54,12 +55,36 @@ def specific_user(user_id):
         res = UserResource.update_by_uid(user_id, column_name, value)
         rsp = Response(json.dumps("Updated", default=str), status=200, content_type="application/json")
         return rsp
+
     elif request.method == 'DELETE':  # delete user
         res = UserResource.delete_by_uid(user_id)
         rsp = Response(json.dumps("Deleted", default=str), status=200, content_type="application/json")
         return rsp
     else:
         return Response(json.dumps("wrong method", default=str), status=404, content_type="application/json")
+
+@app.route('/users/<user_id>/weather', methods=['GET'])
+def get_weather(user_id):
+    user = UserResource.get_by_user_id(user_id)
+    address_id = str(user[0]['addressID'])
+    address = AddressResource.get_by_address_id(address_id)
+    zip_code = int(address[0]['postalCode'])
+
+    api_key = "e77746cf4f104a79a0e834cb44c84522"
+    api_url = f"https://api.openweathermap.org/data/2.5/weather?zip={zip_code},us&units=imperial&appid={api_key}"
+    res = requests.get(api_url).json()
+
+    current_weather = res['weather'][0]['main']
+    current_temperature = "{0:.2f}".format(res["main"]["temp"])
+    name = res['name']
+    cod = res['cod']
+
+    weather = {
+        'location': name,
+        'current_weather': current_weather,
+        'current_temperature': current_temperature
+    }
+    return Response(json.dumps(weather, default=str), status=cod, content_type="application/json")
 
 
 @app.route('/address', methods=['GET', 'POST'])
