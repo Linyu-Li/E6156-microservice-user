@@ -25,7 +25,7 @@ class RDBService:
         db_info = context.get_db_info()
 
         db_connection = pymysql.connect(
-           **db_info,
+            **db_info,
             autocommit=True
         )
         return db_connection
@@ -53,7 +53,7 @@ class RDBService:
         cur = conn.cursor()
 
         sql = "select * from " + db_schema + "." + table_name + " where " + \
-            column_name + " like " + "'" + value_prefix + "%'"
+              column_name + " like " + "'" + value_prefix + "%'"
         print("SQL Statement = " + cur.mogrify(sql, None))
 
         res = cur.execute(sql)
@@ -62,8 +62,6 @@ class RDBService:
         conn.close()
 
         return res
-
-
 
     @classmethod
     def get_all(cls, db_schema, table_name):
@@ -80,7 +78,6 @@ class RDBService:
         conn.close()
 
         return res
-
 
     @classmethod
     def get_by_value(cls, db_schema, table_name, column_name, value):
@@ -134,8 +131,7 @@ class RDBService:
         return res
 
     @classmethod
-    def insert(cls, db_schema, table_name, column_name_list, value_list):
-
+    def insert(cls, db_schema, table_name, column_name_list, value_list, return_id: bool = False):
         conn = RDBService._get_db_connection()
         cur = conn.cursor()
 
@@ -156,12 +152,12 @@ class RDBService:
         sql = "insert into " + db_schema + "." + table_name + " (" + \
               columns + ") " + " values " + " (" + values + ") "
         print("SQL Statement = " + cur.mogrify(sql, None))
-
         res = cur.execute(sql)
-        res = cur.fetchall()
-
+        if return_id:
+            res = cur.lastrowid
+        else:
+            res = cur.fetchall()
         conn.close()
-
         return res
 
     @classmethod
@@ -175,29 +171,24 @@ class RDBService:
             clause = ""
             args = None
         else:
-            for k,v in template.items():
+            for k, v in template.items():
                 terms.append(k + "=%s")
                 args.append(v)
 
-            clause = " where " +  " AND ".join(terms)
-
+            clause = " where " + " AND ".join(terms)
 
         return clause, args
 
     @classmethod
     def find_by_template(cls, db_schema, table_name, template, field_list):
-
-        wc,args = RDBService.get_where_clause_args(template)
-
+        wc, args = RDBService.get_where_clause_args(template)
         conn = RDBService._get_db_connection()
         cur = conn.cursor()
-
-        sql = "select * from " + db_schema + "." + table_name + " " + wc
+        fields = ', '.join(field_list) if field_list else '*'
+        sql = "select {} from ".format(fields) + db_schema + "." + table_name + " " + wc
         res = cur.execute(sql, args=args)
         res = cur.fetchall()
-
         conn.close()
-
         return res
 
     @classmethod
@@ -207,7 +198,7 @@ class RDBService:
         vals = []
         args = []
 
-        for k,v in create_data.items():
+        for k, v in create_data.items():
             cols.append(k)
             vals.append('%s')
             args.append(v)
@@ -216,7 +207,7 @@ class RDBService:
         vals_clause = "values (" + ",".join(vals) + ")"
 
         sql_stmt = "insert into " + db_schema + "." + table_name + " " + cols_clause + \
-            " " + vals_clause
+                   " " + vals_clause
 
         res = RDBService.run_sql(sql_stmt, args)
         return res
