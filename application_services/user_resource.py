@@ -31,6 +31,14 @@ class UserResource(BaseRDBApplicationResource):
         return len(RDBService.get_by_value("users", "User", "email", "'{}'".format(email))) > 0
 
     @classmethod
+    def get_user_id_by_email(cls, email):
+        res = RDBService.find_by_template(
+            "users", "User", {'email': email}, ['userID'])
+        if len(res):
+            return res[0]
+        return None
+
+    @classmethod
     def get_user_id_by_email_pwd(cls, email, pwd):
         res = RDBService.find_by_template("users", "User", {
             'email': email,  # "'{}'".format(email),

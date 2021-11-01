@@ -1,28 +1,51 @@
-from flask import Flask, Response, request, jsonify
+from flask import Flask, Response, request, jsonify, redirect, url_for
 from flask_cors import CORS
 import json
 import logging
+import os
+from random import choice
 import requests
+import string
 
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from itsdangerous import BadSignature, SignatureExpired
+from flask_dance.contrib.google import make_google_blueprint, google
 
 from application_services.user_resource import UserResource
 from application_services.address_resource import AddressResource
+from middleware.security import check_path
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 app = Flask(__name__)
+
 app.config['SECRET_KEY'] = '871d1670d6394a5572849e26c2decaee'
+client_id = "1093327178993-kbj68ghvsopafunmdk8rt1r6upt0oqdo.apps.googleusercontent.com"
+client_secret = "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"
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
+blueprint = make_google_blueprint(
+    client_id=client_id,
+    client_secret=client_secret,
+    reprompt_consent=True,
+    scope=["profile", "email"]
+)
+app.register_blueprint(blueprint, url_prefix="/login")
+google_blueprint = app.blueprints.get("google")
+PWD_CHARS = string.ascii_letters + string.digits + '!@#$%^&*()'
+
 CORS(app)
 
 
+def generate_random_password():
+    return ''.join(choice(PWD_CHARS) for _ in range(12))
 
-def generate_auth_token(user_id, expiration=36000):
+
+def generate_auth_token(payload, expiration=36000):
     s = Serializer(app.config['SECRET_KEY'], expires_in=expiration)
-    return s.dumps({'user_id': user_id})
+    return s.dumps(payload)
 
 
 # Deserialize token
@@ -30,7 +53,7 @@ def verify_auth_token(token):
     s = Serializer(app.config['SECRET_KEY'])
     try:
         data = s.loads(token)
-        return data
+        return data['user_id']
     except (SignatureExpired, BadSignature):
         return None
 
@@ -60,8 +83,9 @@ def users():
             column_name_list.append(key)
             value_list.append(value)
         usr_id = UserResource.insert_users(column_name_list, value_list)
-        rsp = Response(json.dumps("User registered with userID {} (for debug only, do NOT show this in production!)".format(usr_id),
-                                  default=str),
+        rsp = Response(json.dumps(
+            "User registered with userID {} (for debug only, do NOT show this in production!)".format(usr_id),
+            default=str),
                        status=200, content_type="application/json")
         return rsp
     elif request.method == 'GET':
@@ -78,12 +102,31 @@ def auth():
         return Response(json.dumps("method not allowed", default=str), status=405, content_type="application/json")
     req_data = request.get_json()
     email, pwd = req_data['email'], req_data['password']
-    user_id = UserResource.get_user_id_by_email_pwd(email, pwd)     # TODO decode password if encoded
+    user_id = UserResource.get_user_id_by_email_pwd(email, pwd)  # TODO decode password if encoded
     if user_id is None:
         return Response(json.dumps("incorrect email and/or password.", default=str),
                         status=401, content_type="application/json")
-    token = generate_auth_token(user_id)
+    token = generate_auth_token({'user_id': user_id})
     return jsonify({'token': 'Bearer {}'.format(token.decode("utf-8"))})
+
+
+@app.route('/auth-google', methods=['GET'])
+def auth_with_google():
+    if google.authorized:
+        user_data = google.get('oauth2/v2/userinfo').json()
+        # token = blueprint.session.token
+        email = user_data['email']
+        user_id = UserResource.get_user_id_by_email(email)
+        if user_id is None:
+            user_id = UserResource.insert_users(
+                ['email', 'nameFirst', 'nameLast', 'password'],
+                [email,
+                 user_data.get('given_name', None),
+                 user_data.get('family_name', None),
+                 generate_random_password()])
+        token = generate_auth_token({'user_id': user_id})   # TODO may generate token with a more complicated payload
+        return jsonify({'token': 'Bearer {}'.format(token.decode("utf-8"))})
+    return redirect(url_for('google.login'))
 
 
 @app.route('/users/<user_id>', methods=['GET', 'PUT', 'DELETE'])
@@ -108,6 +151,7 @@ def specific_user(user_id):
         return rsp
     else:
         return Response(json.dumps("wrong method", default=str), status=404, content_type="application/json")
+
 
 @app.route('/users/<user_id>/weather', methods=['GET'])
 def get_weather(user_id):
