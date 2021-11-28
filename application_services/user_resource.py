@@ -49,7 +49,7 @@ class UserResource(BaseRDBApplicationResource):
         return None
 
     @classmethod
-    def update_by_uid(cls, user_id, column_name, value):
+    def update_field_by_uid(cls, user_id, column_name, value):
         res = RDBService.update_by_column("users", "User", "userID", user_id, column_name, value)
         return res
 
@@ -57,3 +57,8 @@ class UserResource(BaseRDBApplicationResource):
     def delete_by_uid(cls, user_id):
         res = RDBService.delete_by_column("users", "User", "userID", user_id)
         return res
+
+    @classmethod
+    def update_fields_by_uid(cls, user_id, **kwargs):
+        return RDBService.update_by_template(
+            "users", "User", {'userID': user_id}, kwargs)

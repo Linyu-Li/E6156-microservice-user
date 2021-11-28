@@ -211,3 +211,19 @@ class RDBService:
 
         res = RDBService.run_sql(sql_stmt, args)
         return res
+
+    @classmethod
+    def update_by_template(cls,
+                           db_schema: str,
+                           table_name: str,
+                           template: dict,
+                           field_update: dict):
+        wc, args = RDBService.get_where_clause_args(template)
+        field_clauses, field_vals = [], []
+        for k, v in field_update.items():
+            field_clauses.append("{} = %s".format(k))
+            field_vals.append(v)
+        field_update = ", ".join(field_clauses)
+        sql = "update {}.{} set {}{}".format(
+            db_schema, table_name, field_update, wc)
+        return RDBService.run_sql(sql, field_vals + args)
