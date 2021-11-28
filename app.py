@@ -84,9 +84,9 @@ def users():
             value_list.append(value)
         usr_id = UserResource.insert_users(column_name_list, value_list)
         rsp = Response(json.dumps(
-            "User registered with userID {} (for debug only, do NOT show this in production!)".format(usr_id),
+            "User registered with userID {}".format(usr_id),
             default=str),
-                       status=200, content_type="application/json")
+                       status=201, content_type="application/json")
         return rsp
     elif request.method == 'GET':
         res = UserResource.get_all_users()
@@ -147,7 +147,7 @@ def specific_user(user_id):
 
     elif request.method == 'DELETE':  # delete user
         res = UserResource.delete_by_uid(user_id)
-        rsp = Response(json.dumps("Deleted", default=str), status=200, content_type="application/json")
+        rsp = Response(json.dumps("Deleted", default=str), status=204, content_type="application/json")
         return rsp
     else:
         return Response(json.dumps("wrong method", default=str), status=404, content_type="application/json")
@@ -213,7 +213,7 @@ def specific_address(address_id):
         return rsp
     elif request.method == 'DELETE':  # delete address
         res = AddressResource.delete_by_aid(address_id)
-        rsp = Response(json.dumps("Deleted", default=str), status=200, content_type="application/json")
+        rsp = Response(json.dumps("Deleted", default=str), status=204, content_type="application/json")
         return rsp
     else:
         return Response(json.dumps("wrong method", default=str), status=404, content_type="application/json")
