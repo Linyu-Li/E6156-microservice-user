@@ -83,10 +83,10 @@ def users():
             column_name_list.append(key)
             value_list.append(value)
         usr_id = UserResource.insert_users(column_name_list, value_list)
-        rsp = Response(json.dumps(
-            "User registered with userID {}".format(usr_id),
-            default=str),
-                       status=201, content_type="application/json")
+        rsp = Response(
+            json.dumps(
+                f"User registered with userID {usr_id} (for debug only, do NOT show this in production!)", default=str),
+            status=201, content_type="application/json")
         return rsp
     elif request.method == 'GET':
         res = UserResource.get_all_users()
@@ -133,15 +133,24 @@ def auth_with_google():
 def specific_user(user_id):
     if request.method == 'GET':  # retrieve user info
         res = UserResource.get_by_user_id(user_id)
-        rsp = Response(json.dumps(res, default=str), status=200, content_type="application/json")
+        if res:
+            rsp = Response(json.dumps(res[0], default=str), status=200, content_type="application/json")
+        else:
+            rsp = Response(json.dumps(f"User with ID {user_id} not found!", default=str),
+                           status=404, content_type="application/json")
         return rsp
 
-    elif request.method == 'PUT':  # update user info, currently only support modifying one column at a time
+    elif request.method == 'PUT':
         req_data = request.get_json()
-        column_name = list(req_data.items())[0][0]
-        value = list(req_data.items())[0][1]
-        print(list(req_data.items()))
-        res = UserResource.update_by_uid(user_id, column_name, value)
+
+        # Original: update user info, currently only support modifying one column at a time
+        # column_name = list(req_data.items())[0][0]
+        # value = list(req_data.items())[0][1]
+        # res = UserResource.update_field_by_uid(user_id, column_name, value)
+
+        # New: update user info multiple columns at a time
+        UserResource.update_fields_by_uid(user_id, **req_data)
+
         rsp = Response(json.dumps("Updated", default=str), status=200, content_type="application/json")
         return rsp
 
@@ -150,7 +159,7 @@ def specific_user(user_id):
         rsp = Response(json.dumps("Deleted", default=str), status=204, content_type="application/json")
         return rsp
     else:
-        return Response(json.dumps("wrong method", default=str), status=404, content_type="application/json")
+        return Response(json.dumps("wrong method", default=str), status=405, content_type="application/json")
 
 
 @app.route('/users/<user_id>/weather', methods=['GET'])
@@ -194,14 +203,18 @@ def address():
         rsp = Response(json.dumps(res, default=str), status=200, content_type="application/json")
         return rsp
     else:
-        return Response(json.dumps("wrong method", default=str), status=404, content_type="application/json")
+        return Response(json.dumps("wrong method", default=str), status=405, content_type="application/json")
 
 
 @app.route('/address/<address_id>', methods=['GET', 'PUT', 'DELETE'])
 def specific_address(address_id):
     if request.method == 'GET':  # retrieve address info
         res = AddressResource.get_by_address_id(address_id)
-        rsp = Response(json.dumps(res, default=str), status=200, content_type="application/json")
+        if res:
+            rsp = Response(json.dumps(res[0], default=str), status=200, content_type="application/json")
+        else:
+            rsp = Response(json.dumps(f"Address with ID {address_id} not found!", default=str),
+                           status=404, content_type="application/json")
         return rsp
     elif request.method == 'PUT':  # update address info, currently only support modifying one column at a time
         req_data = request.get_json()
@@ -216,8 +229,8 @@ def specific_address(address_id):
         rsp = Response(json.dumps("Deleted", default=str), status=204, content_type="application/json")
         return rsp
     else:
-        return Response(json.dumps("wrong method", default=str), status=404, content_type="application/json")
+        return Response(json.dumps("wrong method", default=str), status=405, content_type="application/json")
 
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5001)
