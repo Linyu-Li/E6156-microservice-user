@@ -11,17 +11,17 @@ SESS = FuturesSession()
 # TODO change apis below to AWS ones in deployment
 USR_ADDR_PROPS = {
     'microservice': 'User/address microservice',
-    'api': 'http://localhost:5001/users/%s',
+    'api': 'http://localhost:5001/users',
     'fields': ('nameLast', 'nameFirst', 'email', 'addressID', 'password', 'gender')
 }
 USR_PREF_PROPS = {
     'microservice': 'User profile microservice',
-    'api': 'http://localhost:5002/profile/%s',
+    'api': 'http://localhost:5002/profile',
     'fields': ('movie', 'hobby', 'book', 'music', 'sport', 'major', 'orientation')
 }
 SCHEDULE_PROPS = {
     'microservice': 'Scheduler microservice',
-    'api': 'http://localhost:5003/availability/%s',
+    'api': 'http://localhost:5003/availability',
     'fields': ('availID', )
 }
 PUT_PROPS = (
@@ -47,7 +47,7 @@ def async_request_microservices(req_data: dict, data_ids: Tuple[str], headers: D
         data = project_req_data(req_data, put_prop['fields'])
         if data is None:
             return 400, f"Missing data field(s) for {put_prop['microservice']}"
-        futures.append(SESS.put(put_prop['api'] % data_ids[i], data=json.dumps(data), headers=headers))
+        futures.append(SESS.put(put_prop['api'] + f"/{data_ids[i]}", data=json.dumps(data), headers=headers))
 
     for i, future in enumerate(futures):
         res = future.result()
