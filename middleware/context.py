@@ -22,16 +22,10 @@ def get_db_info():
             "cursorclass": pymysql.cursors.DictCursor
         }
     else:
-        # db_info = {
-        #     "host": "fall2021.ccs6dqdhx73p.us-east-2.rds.amazonaws.com",
-        #     "user": "admin",
-        #     "password": "6156password",
-        #     "cursorclass": pymysql.cursors.DictCursor
-        # }
         db_info = {
-            "host": "localhost",
-            "user": "root",
-            "password": "root123456",
+            "host": "fall2021.ccs6dqdhx73p.us-east-2.rds.amazonaws.com",
+            "user": "admin",
+            "password": "6156password",
             "cursorclass": pymysql.cursors.DictCursor
         }
 
