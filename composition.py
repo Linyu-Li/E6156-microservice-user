@@ -6,7 +6,7 @@ from typing import *
 
 app = Flask(__name__)
 CORS(app)
-SESS = FuturesSession()
+sess = FuturesSession()
 
 # TODO change apis below to AWS ones in deployment
 USR_ADDR_PROPS = {
@@ -21,13 +21,13 @@ USR_PREF_PROPS = {
 }
 SCHEDULE_PROPS = {
     'microservice': 'Scheduler microservice',
-    'api': 'http://localhost:5003/availability',
-    'fields': ('availID', )
+    'api': 'http://localhost:5003/avail',
+    'fields': ('Year', 'Month', 'Day', 'StartTime', 'EndTime')
 }
 PUT_PROPS = (
     USR_ADDR_PROPS,
     USR_PREF_PROPS,
-    # SCHEDULE_PROPS
+    SCHEDULE_PROPS
 )
 
 
@@ -47,7 +47,7 @@ def async_request_microservices(req_data: dict, data_ids: Tuple[str], headers: D
         data = project_req_data(req_data, put_prop['fields'])
         if data is None:
             return 400, f"Missing data field(s) for {put_prop['microservice']}"
-        futures.append(SESS.put(put_prop['api'] + f"/{data_ids[i]}", data=json.dumps(data), headers=headers))
+        futures.append(sess.put(put_prop['api'] + f"/{data_ids[i]}", data=json.dumps(data), headers=headers))
 
     for i, future in enumerate(futures):
         res = future.result()
@@ -70,7 +70,7 @@ def update_info():
     data_ids = (
         args.get('userID', None),
         args.get('profileID', None),
-        # args.get('availID', None)
+        args.get('availID', None)
     )
     if any(d_id is None for d_id in data_ids):
         status_code = 400
