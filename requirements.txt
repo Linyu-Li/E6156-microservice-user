@@ -10,4 +10,4 @@ Werkzeug==2.0.1
 requests>=2.22.0
 cryptography>=3.4.7
 Flask-Dance
-grequests
+requests_futures
