@@ -53,9 +53,20 @@ def verify_auth_token(token):
     s = Serializer(app.config['SECRET_KEY'])
     try:
         data = s.loads(token)
-        return data['user_id']
+        return data  # ['user_id']
     except (SignatureExpired, BadSignature):
         return None
+
+
+@app.route('/me', methods=['GET'])
+def get_current_user():
+    token = request.headers["Authorization"][7:]
+    payload = verify_auth_token(token)
+    user_id = payload["user_id"]
+    user = UserResource.get_by_user_id(user_id)
+    if user:
+        return Response(json.dumps({'user_id': user_id}, default=str), status=200, content_type="application/json")
+    return Response("Invalid token", status=401, content_type="text")
 
 
 @app.route('/users', methods=['GET', 'POST'])
@@ -233,4 +244,4 @@ def specific_address(address_id):
 
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5001)
+    app.run(host="0.0.0.0", port=5000)

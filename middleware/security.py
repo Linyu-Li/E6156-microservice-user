@@ -1,17 +1,13 @@
 import json
 
 
-WHITELISTED_PATHS = {"/test-insecure"}
+WHITELISTED_PATHS = {"/test-insecure"}  # paths that do not require login
 
 
-def check_path(request, oauth, blueprint):
-    if request.path in WHITELISTED_PATHS or oauth.authorized:
+def check_path(request):
+    if request.path in WHITELISTED_PATHS:
         return True
-    # if oauth.authorized:
-        # info = 'oauth2/v2/userinfo'
-        # data = oauth.get(info).json()
-        # print(json.dumps(data, indent=2))
-        # token = blueprint.session.token
-        # print(json.dumps(token, indent=2))
-        # return True
+    # 1. read token from request header
+    # 2. verify token (deserialize -> {"user_id": ...})
+    # 3. user_id in DB
     return False
