@@ -41,7 +41,6 @@ def project_req_data(req_data: dict, props: tuple) -> dict:
 
 
 def async_request_microservices(req_data: dict, data_ids: Tuple[str], headers: Dict) -> (int, str):
-    # async_list = [None, None,]  # None]
     futures = []
     for i, put_prop in enumerate(PUT_PROPS):
         data = project_req_data(req_data, put_prop['fields'])
