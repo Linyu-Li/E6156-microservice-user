@@ -54,7 +54,7 @@ def async_request_microservices(req_data: dict,
         tid = time_slot['Id']
         t_data = project_req_data(time_slot, prop['fields'])
         if t_data is None:
-            return 400, f"Missing data field(s) in one of the request data for {prop['microservice']}"
+            return 400, f"Missing field(s) in one of the request data for {prop['microservice']}"
         futures.append(
             sess.put(props['api'] + f"/{user_id}/{tid}",
                      data=json.dumps(t_data),
