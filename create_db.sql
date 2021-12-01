@@ -1,4 +1,8 @@
-create table users.user
+create schema if not exists users;
+use users;
+
+drop table if exists user;
+create table user
 (
 	userID int auto_increment,
 	nameLast varchar(256) null,
@@ -13,11 +17,11 @@ create table users.user
 		unique (userID)
 );
 
-alter table users.user
+alter table user
 	add primary key (userID);
 
-
-create table users.addresses
+drop table if exists addresses;
+create table addresses
 (
 	id int auto_increment
 		primary key,
@@ -25,3 +29,7 @@ create table users.addresses
 	constraint addresses_address_uindex
 		unique (address)
 );
+
+insert into user (nameLast, nameFirst, email, addressID, password, gender)
+values ("Deep", 'Breath', 'dontbeangry@gmail.com', NULL, 'Pop', 'male'),
+       ("ahhhhhh", 'Breath', 'dontbesilly@gmail.com', NULL, 'Pop', 'male');
