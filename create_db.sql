@@ -29,3 +29,7 @@ create table addresses
 	constraint addresses_address_uindex
 		unique (address)
 );
+
+insert into user (nameLast, nameFirst, email, addressID, password, gender)
+values ("Deep", 'Breath', 'dontbeangry@gmail.com', NULL, 'Pop', 'male'),
+       ("ahhhhhh", 'Breath', 'dontbesilly@gmail.com', NULL, 'Pop', 'male');
