@@ -13,7 +13,7 @@ from flask_dance.contrib.google import make_google_blueprint, google
 
 from application_services.user_resource import UserResource
 from application_services.address_resource import AddressResource
-from middleware.security import check_path
+import middleware.security as security
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
@@ -97,7 +97,7 @@ def users():
         rsp = Response(
             json.dumps(
                 f"User registered with userID {usr_id} (for debug only, do NOT show this in production!)", default=str),
-            status=200, content_type="application/json")
+            status=201, content_type="application/json")
         return rsp
     elif request.method == 'GET':
         res = UserResource.get_all_users()
@@ -123,21 +123,36 @@ def auth():
 
 @app.route('/api/auth-google', methods=['GET'])
 def auth_with_google():
-    if google.authorized:
-        user_data = google.get('oauth2/v2/userinfo').json()
-        # token = blueprint.session.token
-        email = user_data['email']
-        user_id = UserResource.get_user_id_by_email(email)
-        if user_id is None:
-            user_id = UserResource.insert_users(
-                ['email', 'nameFirst', 'nameLast', 'password'],
-                [email,
-                 user_data.get('given_name', None),
-                 user_data.get('family_name', None),
-                 generate_random_password()])
-        token = generate_auth_token({'user_id': user_id})   # TODO may generate token with a more complicated payload
-        return jsonify({'token': 'Bearer {}'.format(token.decode("utf-8"))})
-    return redirect(url_for('google.login'))
+    req_data = request.get_json()
+    email = req_data.get("email")
+    user_id = UserResource.get_user_id_by_email(email)
+    if user_id is None:
+        user_id = UserResource.insert_users(
+            ['email', 'nameFirst', 'nameLast', 'password'],
+            [email,
+             user_data.get('given_name', None),
+             user_data.get('family_name', None),
+             generate_random_password()])
+    token = generate_auth_token({'user_id': user_id})  # TODO may generate token with a more complicated payload
+    return jsonify({'token': 'Bearer {}'.format(token.decode("utf-8"))})
+
+# @app.route('/api/auth-google', methods=['GET'])
+# def auth_with_google():
+#     if google.authorized:
+#         user_data = google.get('oauth2/v2/userinfo').json()
+#         # token = blueprint.session.token
+#         email = user_data['email']
+#         user_id = UserResource.get_user_id_by_email(email)
+#         if user_id is None:
+#             user_id = UserResource.insert_users(
+#                 ['email', 'nameFirst', 'nameLast', 'password'],
+#                 [email,
+#                  user_data.get('given_name', None),
+#                  user_data.get('family_name', None),
+#                  generate_random_password()])
+#         token = generate_auth_token({'user_id': user_id})   # TODO may generate token with a more complicated payload
+#         return jsonify({'token': 'Bearer {}'.format(token.decode("utf-8"))})
+#     return redirect(url_for('google.login'))
 
 
 @app.route('/api/users/<user_id>', methods=['GET', 'PUT', 'DELETE'])
@@ -167,7 +182,7 @@ def specific_user(user_id):
 
     elif request.method == 'DELETE':  # delete user
         res = UserResource.delete_by_uid(user_id)
-        rsp = Response(json.dumps("Deleted", default=str), status=200, content_type="application/json")
+        rsp = Response(json.dumps("Deleted", default=str), status=204, content_type="application/json")
         return rsp
     else:
         return Response(json.dumps("wrong method", default=str), status=405, content_type="application/json")
@@ -237,10 +252,21 @@ def specific_address(address_id):
         return rsp
     elif request.method == 'DELETE':  # delete address
         res = AddressResource.delete_by_aid(address_id)
-        rsp = Response(json.dumps("Deleted", default=str), status=200, content_type="application/json")
+        rsp = Response(json.dumps("Deleted", default=str), status=204, content_type="application/json")
         return rsp
     else:
         return Response(json.dumps("wrong method", default=str), status=405, content_type="application/json")
+
+@app.before_request
+def check_valid_path():
+    print("check_valid_path")
+    print(request.path)
+    result_pass = security.check_path(request)
+    print("result_pass: {}".format(result_pass))
+    if not result_pass:
+        print("path not in whitelist")  # TODO wait for oauth being implemented
+        # return redirect(url_for('google.login'))  # redirect to the frontend google auth page
+
 
 
 if __name__ == '__main__':
