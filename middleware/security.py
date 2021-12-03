@@ -7,9 +7,9 @@ WHITELISTED_PATHS = {"/users", '/api/auth-google'}  # paths that do not require 
 
 
 def check_path(request):
-    '''
-    If a request path is in the dict, the security implementation allows the request to proceed.
-    '''
+    """
+    If a requested path is in the dict, the security implementation allows the request to proceed.
+    """
     if request.path in WHITELISTED_PATHS:  # no need for checking google-auth status
         return True
     else:  # check if the user is logged in

@@ -130,8 +130,8 @@ def auth_with_google():
         user_id = UserResource.insert_users(
             ['email', 'nameFirst', 'nameLast', 'password'],
             [email,
-             user_data.get('given_name', None),
-             user_data.get('family_name', None),
+             req_data.get('given_name', None),
+             req_data.get('family_name', None),
              generate_random_password()])
     token = generate_auth_token({'user_id': user_id})  # TODO may generate token with a more complicated payload
     return jsonify({'token': 'Bearer {}'.format(token.decode("utf-8"))})
