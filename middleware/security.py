@@ -17,11 +17,13 @@ def generate_auth_token(payload, expiration=36000):
 
 # Deserialize token
 def verify_auth_token(token):
+    print("type:", type(token))
     s = Serializer(SECRET_KEY)
     try:
         data = s.loads(token)
         return data  # ['user_id']
-    except (SignatureExpired, BadSignature):
+    except (SignatureExpired, BadSignature) as e:
+        print(e)
         return None
 
 
@@ -35,7 +37,9 @@ def check_path(request):
         token = request.headers.get("Authorization")  # None if not logged in
         if token is not None:  # logged in
             token = token[7:]
+            print("token: ", token)
             payload = verify_auth_token(token)
+            print("payload: ", payload)
             user_id = payload["user_id"]
             user = UserResource.get_by_user_id(user_id)
             # double checking if the user is in db
