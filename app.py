@@ -113,12 +113,12 @@ def auth():
         return Response(json.dumps("method not allowed", default=str), status=405, content_type="application/json")
     req_data = request.get_json()
     email, pwd = req_data['email'], req_data['password']
-    user_id = UserResource.get_user_id_by_email_pwd(email, pwd)  # TODO decode password if encoded
-    if user_id is None:
+    user_info = UserResource.get_user_info_by_email_pwd(email, pwd)
+    if user_info is None:
         return Response(json.dumps("incorrect email and/or password.", default=str),
                         status=401, content_type="application/json")
-    token = generate_auth_token({'user_id': user_id})
-    return jsonify({'token': 'Bearer {}'.format(token.decode("utf-8"))})
+    token = generate_auth_token({'user_id': user_info['userID']})
+    return jsonify({'token': 'Bearer {}'.format(token.decode("utf-8")), 'user': user_info})
 
 
 @app.route('/api/auth-google', methods=['GET'])
