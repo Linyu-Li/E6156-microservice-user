@@ -2,8 +2,27 @@ import json
 from application_services.user_resource import UserResource
 from application_services.address_resource import AddressResource
 
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
+from itsdangerous import BadSignature, SignatureExpired
+
+SECRET_KEY = '871d1670d6394a5572849e26c2decaee'
 
 WHITELISTED_PATHS = {"/users", '/api/auth-google'}  # paths that do not require login
+
+
+def generate_auth_token(payload, expiration=36000):
+    s = Serializer(SECRET_KEY, expires_in=expiration)
+    return s.dumps(payload)
+
+
+# Deserialize token
+def verify_auth_token(token):
+    s = Serializer(SECRET_KEY)
+    try:
+        data = s.loads(token)
+        return data  # ['user_id']
+    except (SignatureExpired, BadSignature):
+        return None
 
 
 def check_path(request):

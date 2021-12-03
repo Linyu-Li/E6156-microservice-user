@@ -7,8 +7,6 @@ from random import choice
 import requests
 import string
 
-from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
-from itsdangerous import BadSignature, SignatureExpired
 from flask_dance.contrib.google import make_google_blueprint, google
 
 from application_services.user_resource import UserResource
@@ -43,25 +41,10 @@ def generate_random_password():
     return ''.join(choice(PWD_CHARS) for _ in range(12))
 
 
-def generate_auth_token(payload, expiration=36000):
-    s = Serializer(app.config['SECRET_KEY'], expires_in=expiration)
-    return s.dumps(payload)
-
-
-# Deserialize token
-def verify_auth_token(token):
-    s = Serializer(app.config['SECRET_KEY'])
-    try:
-        data = s.loads(token)
-        return data  # ['user_id']
-    except (SignatureExpired, BadSignature):
-        return None
-
-
 @app.route('/api/me', methods=['GET'])
 def get_current_user():
     token = request.headers["Authorization"][7:]
-    payload = verify_auth_token(token)
+    payload = security.verify_auth_token(token)
     user_id = payload["user_id"]
     user = UserResource.get_by_user_id(user_id)
     if user:
@@ -117,7 +100,7 @@ def auth():
     if user_info is None:
         return Response(json.dumps("incorrect email and/or password.", default=str),
                         status=401, content_type="application/json")
-    token = generate_auth_token({'user_id': user_info['userID']})
+    token = security.generate_auth_token({'user_id': user_info['userID']})
     return jsonify({'token': 'Bearer {}'.format(token.decode("utf-8")), 'user': user_info})
 
 
@@ -133,7 +116,8 @@ def auth_with_google():
              req_data.get('given_name', None),
              req_data.get('family_name', None),
              generate_random_password()])
-    token = generate_auth_token({'user_id': user_id})  # TODO may generate token with a more complicated payload
+    # TODO may generate token with a more complicated payload
+    token = security.generate_auth_token({'user_id': user_id})
     return jsonify({'token': 'Bearer {}'.format(token.decode("utf-8"))})
 
 # @app.route('/api/auth-google', methods=['GET'])
