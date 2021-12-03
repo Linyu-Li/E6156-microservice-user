@@ -58,7 +58,7 @@ def verify_auth_token(token):
         return None
 
 
-@app.route('/me', methods=['GET'])
+@app.route('/api/me', methods=['GET'])
 def get_current_user():
     token = request.headers["Authorization"][7:]
     payload = verify_auth_token(token)
@@ -69,7 +69,7 @@ def get_current_user():
     return Response("Invalid token", status=401, content_type="text")
 
 
-@app.route('/users', methods=['GET', 'POST'])
+@app.route('/api/users', methods=['GET', 'POST'])
 def users():
     if request.method == 'POST':  # create user
         req_data = request.get_json()
@@ -107,7 +107,7 @@ def users():
         return Response(json.dumps("wrong method", default=str), status=405, content_type="application/json")
 
 
-@app.route('/auth', methods=['POST'])
+@app.route('/api/auth', methods=['POST'])
 def auth():
     if request.method != 'POST':
         return Response(json.dumps("method not allowed", default=str), status=405, content_type="application/json")
@@ -121,7 +121,7 @@ def auth():
     return jsonify({'token': 'Bearer {}'.format(token.decode("utf-8"))})
 
 
-@app.route('/auth-google', methods=['GET'])
+@app.route('/api/auth-google', methods=['GET'])
 def auth_with_google():
     if google.authorized:
         user_data = google.get('oauth2/v2/userinfo').json()
@@ -140,7 +140,7 @@ def auth_with_google():
     return redirect(url_for('google.login'))
 
 
-@app.route('/users/<user_id>', methods=['GET', 'PUT', 'DELETE'])
+@app.route('/api/users/<user_id>', methods=['GET', 'PUT', 'DELETE'])
 def specific_user(user_id):
     if request.method == 'GET':  # retrieve user info
         res = UserResource.get_by_user_id(user_id)
@@ -173,7 +173,7 @@ def specific_user(user_id):
         return Response(json.dumps("wrong method", default=str), status=405, content_type="application/json")
 
 
-@app.route('/users/<user_id>/weather', methods=['GET'])
+@app.route('/api/users/<user_id>/weather', methods=['GET'])
 def get_weather(user_id):
     user = UserResource.get_by_user_id(user_id)
     address_id = str(user[0]['addressID'])
@@ -197,7 +197,7 @@ def get_weather(user_id):
     return Response(json.dumps(weather, default=str), status=cod, content_type="application/json")
 
 
-@app.route('/address', methods=['GET', 'POST'])
+@app.route('/api/address', methods=['GET', 'POST'])
 def address():
     if request.method == 'POST':  # create address
         req_data = request.get_json()
@@ -217,7 +217,7 @@ def address():
         return Response(json.dumps("wrong method", default=str), status=405, content_type="application/json")
 
 
-@app.route('/address/<address_id>', methods=['GET', 'PUT', 'DELETE'])
+@app.route('/api/address/<address_id>', methods=['GET', 'PUT', 'DELETE'])
 def specific_address(address_id):
     if request.method == 'GET':  # retrieve address info
         res = AddressResource.get_by_address_id(address_id)
