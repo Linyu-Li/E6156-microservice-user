@@ -34,7 +34,9 @@ app.register_blueprint(blueprint, url_prefix="/login")
 google_blueprint = app.blueprints.get("google")
 PWD_CHARS = string.ascii_letters + string.digits + '!@#$%^&*()'
 
-CORS(app)
+CORS(app,
+     allow_headers=["Content-Type", "Authorization", "Access-Control-Allow-Credentials"],
+     supports_credentials=True)
 
 
 def generate_random_password():
@@ -100,8 +102,7 @@ def auth():
     if user_info is None:
         return Response(json.dumps("incorrect email and/or password.", default=str),
                         status=401, content_type="application/json")
-    token = security.generate_auth_token({'user_id': user_info['userID']})
-    print("!!!!!!: ", type(token))
+    token = security.generate_auth_token({'userID': user_info['userID'], 'email': user_info['email']})
     return jsonify({'token': '{}'.format(token), 'user': user_info})
 
 
@@ -118,7 +119,7 @@ def auth_with_google():
              req_data.get('family_name', None),
              generate_random_password()])
     # TODO may generate token with a more complicated payload
-    token = security.generate_auth_token({'user_id': user_id})
+    token = security.generate_auth_token({'userID': user_id, 'email': email})
     return jsonify({'token': 'Bearer {}'.format(token)})
 
 # @app.route('/api/auth-google', methods=['GET'])
@@ -242,6 +243,7 @@ def specific_address(address_id):
     else:
         return Response(json.dumps("wrong method", default=str), status=405, content_type="application/json")
 
+
 @app.before_request
 def check_valid_path():
     print("check_valid_path")
@@ -251,7 +253,8 @@ def check_valid_path():
     if not result_pass:
         print("path not in whitelist")  # TODO wait for oauth being implemented
         # return redirect(url_for('google.login'))  # redirect to the frontend google auth page
-
+        # return Response(json.dumps("not authorized", default=str), status=401, content_type="application/json")
+        # return "Unauthorized", 401
 
 
 if __name__ == '__main__':
