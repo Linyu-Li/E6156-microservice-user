@@ -21,10 +21,8 @@ class UserResource(BaseRDBApplicationResource):
         return RDBService.insert("users", "user", column_name_list, value_list, return_id=True)
 
     @classmethod
-    def get_by_user_id(cls, user_id):
-        res = RDBService.get_by_value("users", "user",
-                                      "userID", user_id)
-        return res
+    def get_by_user_id(cls, user_id, fields=None):
+        return RDBService.find_by_template("users", "user", {"userID": user_id}, fields)
 
     @classmethod
     def exists_by_email(cls, email):

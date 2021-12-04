@@ -144,7 +144,13 @@ def auth_with_google():
 @app.route('/api/users/<user_id>', methods=['GET', 'PUT', 'DELETE'])
 def specific_user(user_id):
     if request.method == 'GET':  # retrieve user info
-        res = UserResource.get_by_user_id(user_id)
+        fields = request.args.get('fields', 'nameFirst,nameLast,email,addressID,gender')
+        try:
+            fields = fields.split(',')
+            res = UserResource.get_by_user_id(user_id, fields)
+        except ValueError:
+            return Response(json.dumps("Invalid fields requested!", default=str),
+                            status=400, content_type="application/json")
         if res:
             rsp = Response(json.dumps(res[0], default=str), status=200, content_type="application/json")
         else:
