@@ -5,7 +5,7 @@ from itsdangerous import BadSignature, SignatureExpired
 
 SECRET_KEY = '871d1670d6394a5572849e26c2decaee'
 
-WHITELISTED_PATHS = {"/users", '/api/auth-google'}  # paths that do not require login
+WHITELISTED_PATHS = {"/api/users", '/api/auth-google'}  # paths that do not require login
 
 expiration = 36000
 serializer = Serializer(SECRET_KEY, expires_in=expiration)
@@ -37,6 +37,8 @@ def check_path(request):
         if token is not None:  # logged in
             token = token[7:]
             payload = verify_auth_token(token)
+            if payload is None:
+                return False
             user_id = payload["user_id"]
             user = UserResource.get_by_user_id(user_id)
             # double checking if the user is in db
