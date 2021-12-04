@@ -1,6 +1,4 @@
-import json
 from application_services.user_resource import UserResource
-from application_services.address_resource import AddressResource
 
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from itsdangerous import BadSignature, SignatureExpired
@@ -9,21 +7,22 @@ SECRET_KEY = '871d1670d6394a5572849e26c2decaee'
 
 WHITELISTED_PATHS = {"/users", '/api/auth-google'}  # paths that do not require login
 
+expiration = 36000
+serializer = Serializer(SECRET_KEY, expires_in=expiration)
 
-def generate_auth_token(payload, expiration=36000):
-    s = Serializer(SECRET_KEY, expires_in=expiration)
-    return s.dumps(payload)
+
+def generate_auth_token(payload: dict) -> str:
+    token = serializer.dumps(payload)
+    return token.decode('ascii')
 
 
 # Deserialize token
-def verify_auth_token(token):
-    print("type:", type(token))
-    s = Serializer(SECRET_KEY)
+def verify_auth_token(token: str) -> dict:
     try:
-        data = s.loads(token)
+        data = serializer.loads(token.encode('ascii'))
         return data  # ['user_id']
     except (SignatureExpired, BadSignature) as e:
-        print(e)
+        # print(e)
         return None
 
 
@@ -37,17 +36,15 @@ def check_path(request):
         token = request.headers.get("Authorization")  # None if not logged in
         if token is not None:  # logged in
             token = token[7:]
-            print("token: ", token)
             payload = verify_auth_token(token)
-            print("payload: ", payload)
             user_id = payload["user_id"]
             user = UserResource.get_by_user_id(user_id)
             # double checking if the user is in db
             if user:
-                print("'user_id': {}".format(user))
+                # print("'user_id': {}".format(user))
                 return True
             else:
-                print("'user_id': {} not exists".format(user))
+                # print("'user_id': {} not exists".format(user))
                 return False
         else:  # not logged in, redirect to Google to logged in
             return False

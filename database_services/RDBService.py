@@ -86,7 +86,7 @@ class RDBService:
         cur = conn.cursor()
 
         sql = "select * from " + db_schema + "." + table_name + " where " + \
-              column_name + " = " + value
+              column_name + " = " + str(value)
         print("SQL Statement = " + cur.mogrify(sql, None))
 
         res = cur.execute(sql)

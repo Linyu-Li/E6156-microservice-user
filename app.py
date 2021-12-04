@@ -19,7 +19,7 @@ logger.setLevel(logging.INFO)
 
 app = Flask(__name__)
 
-app.config['SECRET_KEY'] = '871d1670d6394a5572849e26c2decaee'
+app.config['SECRET_KEY'] = security.SECRET_KEY
 client_id = "1093327178993-kbj68ghvsopafunmdk8rt1r6upt0oqdo.apps.googleusercontent.com"
 client_secret = "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"
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
@@ -102,7 +102,7 @@ def auth():
                         status=401, content_type="application/json")
     token = security.generate_auth_token({'user_id': user_info['userID']})
     print("!!!!!!: ", type(token))
-    return jsonify({'token': '{}'.format(token.decode("utf-8")), 'user': user_info})
+    return jsonify({'token': '{}'.format(token), 'user': user_info})
 
 
 @app.route('/api/auth-google', methods=['GET'])
@@ -119,7 +119,7 @@ def auth_with_google():
              generate_random_password()])
     # TODO may generate token with a more complicated payload
     token = security.generate_auth_token({'user_id': user_id})
-    return jsonify({'token': 'Bearer {}'.format(token.decode("utf-8"))})
+    return jsonify({'token': 'Bearer {}'.format(token)})
 
 # @app.route('/api/auth-google', methods=['GET'])
 # def auth_with_google():
