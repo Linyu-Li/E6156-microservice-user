@@ -1,5 +1,5 @@
 from flask import Flask, Response, request, jsonify, redirect, url_for
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 import json
 import logging
 import os
@@ -20,6 +20,7 @@ logger.setLevel(logging.INFO)
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = security.SECRET_KEY
+app.config['CORS_HEADERS'] = 'Content-Type'
 client_id = "1093327178993-kbj68ghvsopafunmdk8rt1r6upt0oqdo.apps.googleusercontent.com"
 client_secret = "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"
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
@@ -144,15 +145,16 @@ def auth_with_google():
 @app.route('/api/users/<user_id>', methods=['GET', 'PUT', 'DELETE'])
 def specific_user(user_id):
     if request.method == 'GET':  # retrieve user info
-        fields = request.args.get('fields', 'nameFirst,nameLast,email,addressID,gender')
+        fields = request.args.get('fields', 'nameFirst,nameLast,email,addressID,gender').split(',')
         try:
-            fields = fields.split(',')
             res = UserResource.get_by_user_id(user_id, fields)
-        except ValueError:
+        except:
             return Response(json.dumps("Invalid fields requested!", default=str),
-                            status=400, content_type="application/json")
+                            status=422, content_type="application/json")
         if res:
-            rsp = Response(json.dumps(res[0], default=str), status=200, content_type="application/json")
+            res = res[0]
+            res.pop('password', None)
+            rsp = Response(json.dumps(res, default=str), status=200, content_type="application/json")
         else:
             rsp = Response(json.dumps(f"User with ID {user_id} not found!", default=str),
                            status=404, content_type="application/json")
@@ -257,10 +259,18 @@ def check_valid_path():
     result_pass = security.check_path(request)
     print("result_pass: {}".format(result_pass))
     if not result_pass:
-        print("path not in whitelist")  # TODO wait for oauth being implemented
+        print("path not in whitelist")
+
+        # Deprecated plan: google oauth at back end
         # return redirect(url_for('google.login'))  # redirect to the frontend google auth page
-        # return Response(json.dumps("not authorized", default=str), status=401, content_type="application/json")
-        # return "Unauthorized", 401
+
+        # New plan: return 401 unauthorized response if not result_pass
+        # Problem: if return response here, front end complains no CORS
+        # rsp = Response(json.dumps("not authorized", default=str), status=401, content_type="application/json")
+        # rsp.headers.add("Access-Control-Allow-Origin", "*")
+        # rsp.headers.add('Access-Control-Allow-Headers', "*")
+        # rsp.headers.add('Access-Control-Allow-Methods', "*")
+        # return rsp
 
 
 if __name__ == '__main__':
