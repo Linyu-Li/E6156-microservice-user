@@ -252,20 +252,15 @@ def specific_address(address_id):
         return Response(json.dumps("wrong method", default=str), status=405, content_type="application/json")
 
 
-@app.route('/api/unauthorized', methods=['GET'])
-def unauthorized():
-    return Response(json.dumps("Invalid token", default=str), status=401, content_type="application/json")
-
-
 @app.before_request
 def check_valid_path():
     if request.path not in security.WHITELISTED_PATHS and request.method != 'OPTIONS':
         # print("check_valid_path")
         # print(request.path)
         # print(request.endpoint)
-        result_pass = security.check_path(request)
+        # result_pass = security.check_path(request)
         # print("result_pass: {}".format(result_pass))
-        if not result_pass:
+        if not security.check_path(request):
             return "Invalid token", 401
 
 
