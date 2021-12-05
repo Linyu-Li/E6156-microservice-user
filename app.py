@@ -1,5 +1,5 @@
 from flask import Flask, Response, request, jsonify, redirect, url_for
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 import json
 import logging
 import os
@@ -20,19 +20,19 @@ logger.setLevel(logging.INFO)
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = security.SECRET_KEY
-app.config['CORS_HEADERS'] = 'Content-Type'
-client_id = "1093327178993-kbj68ghvsopafunmdk8rt1r6upt0oqdo.apps.googleusercontent.com"
-client_secret = "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"
-os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
-blueprint = make_google_blueprint(
-    client_id=client_id,
-    client_secret=client_secret,
-    reprompt_consent=True,
-    scope=["profile", "email"]
-)
-app.register_blueprint(blueprint, url_prefix="/login")
-google_blueprint = app.blueprints.get("google")
+# app.config['CORS_HEADERS'] = 'Content-Type'
+# client_id = "1093327178993-kbj68ghvsopafunmdk8rt1r6upt0oqdo.apps.googleusercontent.com"
+# client_secret = "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"
+# os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+# os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
+# blueprint = make_google_blueprint(
+#     client_id=client_id,
+#     client_secret=client_secret,
+#     reprompt_consent=True,
+#     scope=["profile", "email"]
+# )
+# app.register_blueprint(blueprint, url_prefix="/login")
+# google_blueprint = app.blueprints.get("google")
 PWD_CHARS = string.ascii_letters + string.digits + '!@#$%^&*()'
 
 CORS(app,
@@ -252,25 +252,21 @@ def specific_address(address_id):
         return Response(json.dumps("wrong method", default=str), status=405, content_type="application/json")
 
 
+@app.route('/api/unauthorized', methods=['GET'])
+def unauthorized():
+    return Response(json.dumps("Invalid token", default=str), status=401, content_type="application/json")
+
+
 @app.before_request
 def check_valid_path():
-    print("check_valid_path")
-    print(request.path)
-    result_pass = security.check_path(request)
-    print("result_pass: {}".format(result_pass))
-    if not result_pass:
-        print("path not in whitelist")
-
-        # Deprecated plan: google oauth at back end
-        # return redirect(url_for('google.login'))  # redirect to the frontend google auth page
-
-        # New plan: return 401 unauthorized response if not result_pass
-        # Problem: if return response here, front end complains no CORS
-        # rsp = Response(json.dumps("not authorized", default=str), status=401, content_type="application/json")
-        # rsp.headers.add("Access-Control-Allow-Origin", "*")
-        # rsp.headers.add('Access-Control-Allow-Headers', "*")
-        # rsp.headers.add('Access-Control-Allow-Methods', "*")
-        # return rsp
+    if request.path not in security.WHITELISTED_PATHS and request.method != 'OPTIONS':
+        # print("check_valid_path")
+        # print(request.path)
+        # print(request.endpoint)
+        result_pass = security.check_path(request)
+        # print("result_pass: {}".format(result_pass))
+        if not result_pass:
+            return "Invalid token", 401
 
 
 if __name__ == '__main__':
