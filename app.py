@@ -254,7 +254,8 @@ def specific_address(address_id):
 
 @app.before_request
 def check_valid_path():
-    if request.path not in security.WHITELISTED_PATHS and request.method != 'OPTIONS':
+    if not request.path.startswith('/api/address') and request.path not in security.WHITELISTED_PATHS \
+            and request.method != 'OPTIONS':
         # print("check_valid_path")
         # print(request.path)
         # print(request.endpoint)
