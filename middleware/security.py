@@ -35,7 +35,8 @@ def check_path(request):
     else:  # check if the user is logged in
         token = request.headers.get("Authorization")  # None if not logged in
         if token is not None:  # logged in
-            token = token[7:]
+            if token.startswith('Bearer '):
+                token = token[7:]
             payload = verify_auth_token(token)
             if payload is None:
                 return False

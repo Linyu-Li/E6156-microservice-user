@@ -121,7 +121,7 @@ def auth_with_google():
              generate_random_password()])
     # TODO may generate token with a more complicated payload
     token = security.generate_auth_token({'userID': user_id, 'email': email})
-    return jsonify({'token': 'Bearer {}'.format(token)})
+    return jsonify({'token': '{}'.format(token)})
 
 # @app.route('/api/auth-google', methods=['GET'])
 # def auth_with_google():
