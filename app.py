@@ -72,9 +72,9 @@ def users():
             return Response(json.dumps("Postcode missing.", default=str), status=400, content_type="application/json")
 
         postcode = req_data.pop('postcode')
-        address_id = AddressResource.insert_address(('address', 'postcode'), (None, postcode))
+        address_id = AddressResource.insert_address(('postalCode', ), (postcode, ))
 
-        data = {}
+        data = {'addressID': address_id}
         for k in req_data:
             if req_data[k] is not None:
                 data[k] = req_data[k]
@@ -86,7 +86,7 @@ def users():
         usr_id = UserResource.insert_users(column_name_list, value_list)
         rsp = Response(
             json.dumps(
-                f"User registered with userID {usr_id} (for debug only, do NOT show this in production!)", default=str),
+                f"User registered with userID {usr_id}!", default=str),
             status=201, content_type="application/json")
         return rsp
     elif request.method == 'GET':
