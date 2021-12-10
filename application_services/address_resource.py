@@ -17,8 +17,8 @@ class AddressResource(BaseRDBApplicationResource):
         return res
 
     @classmethod
-    def insert_address(cls, column_name_list, value_list): # db_schema, table_name, column_name_list, value_list
-        res = RDBService.insert("users", "address", column_name_list, value_list)
+    def insert_address(cls, column_name_list, value_list):  # db_schema, table_name, column_name_list, value_list
+        res = RDBService.insert("users", "address", column_name_list, value_list, return_id=True)
         return res
 
     @classmethod

@@ -70,7 +70,9 @@ def users():
             return Response(json.dumps("Password missing.", default=str), status=400, content_type="application/json")
         if req_data.get('postcode', None) is None:
             return Response(json.dumps("Postcode missing.", default=str), status=400, content_type="application/json")
+
         postcode = req_data.pop('postcode')
+        address_id = AddressResource.insert_address(('address', 'postcode'), (None, postcode))
 
         data = {}
         for k in req_data:
