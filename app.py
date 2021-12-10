@@ -273,7 +273,7 @@ def specific_address(address_id):
 
 # @app.before_request
 def check_valid_path():
-    if not request.path.startswith('/api/address') and request.path not in security.WHITELISTED_PATHS \
+    if not request.path.startswith('/api/address') and request.path in security.BLOCK_PATHS \
             and request.method != 'OPTIONS':
         if not security.check_path(request):
             return "Invalid token", 401
