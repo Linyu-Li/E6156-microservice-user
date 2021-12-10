@@ -244,7 +244,7 @@ def specific_address(address_id):
         return Response(json.dumps("wrong method", default=str), status=405, content_type="application/json")
 
 
-@app.before_request
+# @app.before_request
 def check_valid_path():
     print("check_valid_path")
     print(request.path)
@@ -258,4 +258,4 @@ def check_valid_path():
 
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5001)
