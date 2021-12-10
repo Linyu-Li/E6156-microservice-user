@@ -256,15 +256,9 @@ def specific_address(address_id):
 def check_valid_path():
     if not request.path.startswith('/api/address') and request.path not in security.WHITELISTED_PATHS \
             and request.method != 'OPTIONS':
-        # print("check_valid_path")
-        # print(request.path)
-        # print(request.endpoint)
-        # result_pass = security.check_path(request)
-        # print("result_pass: {}".format(result_pass))
         if not security.check_path(request):
             return "Invalid token", 401
 
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000)
-    # app.run(port=5000)
