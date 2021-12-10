@@ -7,7 +7,7 @@ SECRET_KEY = '871d1670d6394a5572849e26c2decaee'
 
 BLOCK_PATHS = {''}  # paths that do not require login
 
-expiration = 36000
+expiration = 7776000
 serializer = Serializer(SECRET_KEY, expires_in=expiration)
 
 
@@ -35,10 +35,11 @@ def check_path(request):
     else:  # check if the user is logged in
         token = request.headers.get("Authorization")  # None if not logged in
         if token is not None:  # logged in
-            token = token[7:]
+            if token.startswith('Bearer '):
+                token = token[7:]
             payload = verify_auth_token(token)
-            # if payload is None:
-            #     return False
+            if payload is None:
+                return False
             user_id = payload["userID"]
             if not UserResource.exists_by_email(payload['email']):
                 return False

@@ -20,18 +20,19 @@ logger.setLevel(logging.INFO)
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = security.SECRET_KEY
-client_id = "1093327178993-kbj68ghvsopafunmdk8rt1r6upt0oqdo.apps.googleusercontent.com"
-client_secret = "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"
-os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
-blueprint = make_google_blueprint(
-    client_id=client_id,
-    client_secret=client_secret,
-    reprompt_consent=True,
-    scope=["profile", "email"]
-)
-app.register_blueprint(blueprint, url_prefix="/login")
-google_blueprint = app.blueprints.get("google")
+# app.config['CORS_HEADERS'] = 'Content-Type'
+# client_id = "1093327178993-kbj68ghvsopafunmdk8rt1r6upt0oqdo.apps.googleusercontent.com"
+# client_secret = "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"
+# os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+# os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
+# blueprint = make_google_blueprint(
+#     client_id=client_id,
+#     client_secret=client_secret,
+#     reprompt_consent=True,
+#     scope=["profile", "email"]
+# )
+# app.register_blueprint(blueprint, url_prefix="/login")
+# google_blueprint = app.blueprints.get("google")
 PWD_CHARS = string.ascii_letters + string.digits + '!@#$%^&*()'
 
 CORS(app,
@@ -58,20 +59,22 @@ def get_current_user():
 def users():
     if request.method == 'POST':  # create user
         req_data = request.get_json()
+        print(req_data)
         email = req_data.get('email', None)
         if email is None:
             return Response(json.dumps("Email missing.", default=str), status=400, content_type="application/json")
         if UserResource.exists_by_email(email):
             return Response(json.dumps("Email already registered. Please login or use another email.", default=str),
                             status=422, content_type="application/json")
-        # TODO encode password
         if req_data.get('password', None) is None:
             return Response(json.dumps("Password missing.", default=str), status=400, content_type="application/json")
+        if req_data.get('postcode', None) is None:
+            return Response(json.dumps("Postcode missing.", default=str), status=400, content_type="application/json")
+        postcode = req_data.pop('postcode')
 
         data = {}
         for k in req_data:
             if req_data[k] is not None:
-                # TODO check if data contains keys that do not correspond to any columns on the DB table
                 data[k] = req_data[k]
         column_name_list = []
         value_list = []
@@ -120,6 +123,22 @@ def auth():
 #              generate_random_password()])
 #     # TODO may generate token with a more complicated payload
 #     token = security.generate_auth_token({'userID': user_id, 'email': email})
+#     return jsonify({'token': '{}'.format(token)})
+
+# @app.route('/api/auth-google', methods=['GET'])
+# def auth_with_google():
+#     req_data = request.get_json()
+#     email = req_data.get("email")
+#     user_id = UserResource.get_user_id_by_email(email)
+#     if user_id is None:
+#         user_id = UserResource.insert_users(
+#             ['email', 'nameFirst', 'nameLast', 'password'],
+#             [email,
+#              req_data.get('given_name', None),
+#              req_data.get('family_name', None),
+#              generate_random_password()])
+#     # TODO may generate token with a more complicated payload
+#     token = security.generate_auth_token({'userID': user_id, 'email': email})
 #     return jsonify({'token': 'Bearer {}'.format(token)})
 
 @app.route('/api/auth-google', methods=['GET'])
@@ -145,9 +164,16 @@ def auth_with_google():
 @app.route('/api/users/<user_id>', methods=['GET', 'PUT', 'DELETE'])
 def specific_user(user_id):
     if request.method == 'GET':  # retrieve user info
-        res = UserResource.get_by_user_id(user_id)
+        fields = request.args.get('fields', 'nameFirst,nameLast,email,addressID,gender').split(',')
+        try:
+            res = UserResource.get_by_user_id(user_id, fields)
+        except:
+            return Response(json.dumps("Invalid fields requested!", default=str),
+                            status=422, content_type="application/json")
         if res:
-            rsp = Response(json.dumps(res[0], default=str), status=200, content_type="application/json")
+            res = res[0]
+            res.pop('password', None)
+            rsp = Response(json.dumps(res, default=str), status=200, content_type="application/json")
         else:
             rsp = Response(json.dumps(f"User with ID {user_id} not found!", default=str),
                            status=404, content_type="application/json")
@@ -245,19 +271,13 @@ def specific_address(address_id):
         return Response(json.dumps("wrong method", default=str), status=405, content_type="application/json")
 
 
-@app.before_request
+# @app.before_request
 def check_valid_path():
-    print("check_valid_path")
-    print(request.path)
-    result_pass = security.check_path(request)
-    print("result_pass: {}".format(result_pass))
-    if not result_pass:
-        print("path not in whitelist")  # TODO wait for oauth being implemented
-        # return redirect(url_for('google.login'))  # redirect to the frontend google auth page
-        # return Response(json.dumps("not authorized", default=str), status=401, content_type="application/json")
-        # return "Unauthorized", 401
+    if not request.path.startswith('/api/address') and request.path not in security.WHITELISTED_PATHS \
+            and request.method != 'OPTIONS':
+        if not security.check_path(request):
+            return "Invalid token", 401
 
 
 if __name__ == '__main__':
-    # app.run(host="0.0.0.0", port=5000)
-    app.run(port=5000)
+    app.run(host="0.0.0.0", port=5001)

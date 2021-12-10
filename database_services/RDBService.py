@@ -145,9 +145,9 @@ class RDBService:
         values = ""
         for index, value in enumerate(value_list):
             if index != (len(value_list) - 1):
-                values = values + "'" + value + "'" + ', '
+                values = values + "'" + str(value) + "'" + ', '
             else:
-                values = values + "'" + value + "'"
+                values = values + "'" + str(value) + "'"
 
         sql = "insert into " + db_schema + "." + table_name + " (" + \
               columns + ") " + " values " + " (" + values + ") "
