@@ -5,7 +5,7 @@ from itsdangerous import BadSignature, SignatureExpired
 
 SECRET_KEY = '871d1670d6394a5572849e26c2decaee'
 
-WHITELISTED_PATHS = {'/api/users', '/api/auth', '/api/auth-google', "/api/addresses"}  # paths that do not require login
+BLOCK_PATHS = {''}  # paths that do not require login
 
 expiration = 36000
 serializer = Serializer(SECRET_KEY, expires_in=expiration)
@@ -30,7 +30,7 @@ def check_path(request):
     """
     If a requested path is in the dict, the security implementation allows the request to proceed.
     """
-    if request.path in WHITELISTED_PATHS:  # no need for checking google-auth status
+    if request.path not in BLOCK_PATHS:  # no need for checking google-auth status
         return True
     else:  # check if the user is logged in
         token = request.headers.get("Authorization")  # None if not logged in

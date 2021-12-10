@@ -106,39 +106,40 @@ def auth():
     return jsonify({'token': '{}'.format(token), 'user': user_info})
 
 
-@app.route('/api/auth-google', methods=['GET'])
-def auth_with_google():
-    req_data = request.get_json()
-    email = req_data.get("email")
-    user_id = UserResource.get_user_id_by_email(email)
-    if user_id is None:
-        user_id = UserResource.insert_users(
-            ['email', 'nameFirst', 'nameLast', 'password'],
-            [email,
-             req_data.get('given_name', None),
-             req_data.get('family_name', None),
-             generate_random_password()])
-    # TODO may generate token with a more complicated payload
-    token = security.generate_auth_token({'userID': user_id, 'email': email})
-    return jsonify({'token': 'Bearer {}'.format(token)})
-
 # @app.route('/api/auth-google', methods=['GET'])
 # def auth_with_google():
-#     if google.authorized:
-#         user_data = google.get('oauth2/v2/userinfo').json()
-#         # token = blueprint.session.token
-#         email = user_data['email']
-#         user_id = UserResource.get_user_id_by_email(email)
-#         if user_id is None:
-#             user_id = UserResource.insert_users(
-#                 ['email', 'nameFirst', 'nameLast', 'password'],
-#                 [email,
-#                  user_data.get('given_name', None),
-#                  user_data.get('family_name', None),
-#                  generate_random_password()])
-#         token = generate_auth_token({'user_id': user_id})   # TODO may generate token with a more complicated payload
-#         return jsonify({'token': 'Bearer {}'.format(token.decode("utf-8"))})
-#     return redirect(url_for('google.login'))
+#     req_data = request.get_json()
+#     email = req_data.get("email")
+#     user_id = UserResource.get_user_id_by_email(email)
+#     if user_id is None:
+#         user_id = UserResource.insert_users(
+#             ['email', 'nameFirst', 'nameLast', 'password'],
+#             [email,
+#              req_data.get('given_name', None),
+#              req_data.get('family_name', None),
+#              generate_random_password()])
+#     # TODO may generate token with a more complicated payload
+#     token = security.generate_auth_token({'userID': user_id, 'email': email})
+#     return jsonify({'token': 'Bearer {}'.format(token)})
+
+@app.route('/api/auth-google', methods=['GET'])
+def auth_with_google():
+    if google.authorized:
+        user_data = google.get('oauth2/v2/userinfo').json()
+        # token = blueprint.session.token
+        email = user_data['email']
+        user_id = UserResource.get_user_id_by_email(email)
+        if user_id is None:
+            user_id = UserResource.insert_users(
+                ['email', 'nameFirst', 'nameLast', 'password'],
+                [email,
+                 user_data.get('given_name', None),
+                 user_data.get('family_name', None),
+                 generate_random_password()])
+        # token = security.generate_auth_token({'user_id': user_id})   # TODO may generate token with a more complicated payload
+        # return jsonify({'token': 'Bearer {}'.format(token.decode("utf-8"))})
+        return user_data
+    return redirect(url_for('google.login'))
 
 
 @app.route('/api/users/<user_id>', methods=['GET', 'PUT', 'DELETE'])
@@ -258,5 +259,5 @@ def check_valid_path():
 
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000)
-    # app.run(port=5000)
+    # app.run(host="0.0.0.0", port=5000)
+    app.run(port=5000)
