@@ -29,7 +29,7 @@ def get_db_info():
             "cursorclass": pymysql.cursors.DictCursor
             # "host": "localhost",
             # "user": "root",
-            # "password": "Wife661217*",
+            # "password": "",
             # "cursorclass": pymysql.cursors.DictCursor
         }
 

@@ -20,18 +20,19 @@ logger.setLevel(logging.INFO)
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = security.SECRET_KEY
-client_id = "1093327178993-kbj68ghvsopafunmdk8rt1r6upt0oqdo.apps.googleusercontent.com"
-client_secret = "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"
-os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
-blueprint = make_google_blueprint(
-    client_id=client_id,
-    client_secret=client_secret,
-    reprompt_consent=True,
-    scope=["profile", "email"]
-)
-app.register_blueprint(blueprint, url_prefix="/login")
-google_blueprint = app.blueprints.get("google")
+# app.config['CORS_HEADERS'] = 'Content-Type'
+# client_id = "1093327178993-kbj68ghvsopafunmdk8rt1r6upt0oqdo.apps.googleusercontent.com"
+# client_secret = "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"
+# os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+# os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
+# blueprint = make_google_blueprint(
+#     client_id=client_id,
+#     client_secret=client_secret,
+#     reprompt_consent=True,
+#     scope=["profile", "email"]
+# )
+# app.register_blueprint(blueprint, url_prefix="/login")
+# google_blueprint = app.blueprints.get("google")
 PWD_CHARS = string.ascii_letters + string.digits + '!@#$%^&*()'
 
 CORS(app,
@@ -120,7 +121,7 @@ def auth_with_google():
              generate_random_password()])
     # TODO may generate token with a more complicated payload
     token = security.generate_auth_token({'userID': user_id, 'email': email})
-    return jsonify({'token': 'Bearer {}'.format(token)})
+    return jsonify({'token': '{}'.format(token)})
 
 # @app.route('/api/auth-google', methods=['GET'])
 # def auth_with_google():
@@ -144,9 +145,16 @@ def auth_with_google():
 @app.route('/api/users/<user_id>', methods=['GET', 'PUT', 'DELETE'])
 def specific_user(user_id):
     if request.method == 'GET':  # retrieve user info
-        res = UserResource.get_by_user_id(user_id)
+        fields = request.args.get('fields', 'nameFirst,nameLast,email,addressID,gender').split(',')
+        try:
+            res = UserResource.get_by_user_id(user_id, fields)
+        except:
+            return Response(json.dumps("Invalid fields requested!", default=str),
+                            status=422, content_type="application/json")
         if res:
-            rsp = Response(json.dumps(res[0], default=str), status=200, content_type="application/json")
+            res = res[0]
+            res.pop('password', None)
+            rsp = Response(json.dumps(res, default=str), status=200, content_type="application/json")
         else:
             rsp = Response(json.dumps(f"User with ID {user_id} not found!", default=str),
                            status=404, content_type="application/json")
@@ -246,15 +254,10 @@ def specific_address(address_id):
 
 # @app.before_request
 def check_valid_path():
-    print("check_valid_path")
-    print(request.path)
-    result_pass = security.check_path(request)
-    print("result_pass: {}".format(result_pass))
-    if not result_pass:
-        print("path not in whitelist")  # TODO wait for oauth being implemented
-        # return redirect(url_for('google.login'))  # redirect to the frontend google auth page
-        # return Response(json.dumps("not authorized", default=str), status=401, content_type="application/json")
-        # return "Unauthorized", 401
+    if not request.path.startswith('/api/address') and request.path not in security.WHITELISTED_PATHS \
+            and request.method != 'OPTIONS':
+        if not security.check_path(request):
+            return "Invalid token", 401
 
 
 if __name__ == '__main__':
