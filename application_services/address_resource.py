@@ -28,6 +28,11 @@ class AddressResource(BaseRDBApplicationResource):
         return res
 
     @classmethod
+    def get_by_address(cls, address):
+        return RDBService.get_by_value("users", "address",
+                                       "address", address)
+
+    @classmethod
     def update_by_aid(cls, address_id, column_name, value):
         res = RDBService.update_by_column("users", "address", "addressID", address_id, column_name, value)
         return res

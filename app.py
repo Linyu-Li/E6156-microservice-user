@@ -72,7 +72,15 @@ def users():
             return Response(json.dumps("Postcode missing.", default=str), status=400, content_type="application/json")
 
         postcode = req_data.pop('postcode')
-        address_id = AddressResource.insert_address(('postalCode', ), (postcode, ))
+        street_address = req_data.pop('address', None)
+        if street_address:
+            existing_address = AddressResource.get_by_address(street_address)
+            if existing_address:
+                address_id = existing_address[0]['addressID']
+            else:
+                address_id = AddressResource.insert_address(('address', 'postalCode'), (street_address, postcode))
+        else:
+            address_id = AddressResource.insert_address(('postalCode', ), (postcode, ))
 
         data = {'addressID': address_id}
         for k in req_data:
