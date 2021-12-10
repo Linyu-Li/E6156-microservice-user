@@ -59,20 +59,22 @@ def get_current_user():
 def users():
     if request.method == 'POST':  # create user
         req_data = request.get_json()
+        print(req_data)
         email = req_data.get('email', None)
         if email is None:
             return Response(json.dumps("Email missing.", default=str), status=400, content_type="application/json")
         if UserResource.exists_by_email(email):
             return Response(json.dumps("Email already registered. Please login or use another email.", default=str),
                             status=422, content_type="application/json")
-        # TODO encode password
         if req_data.get('password', None) is None:
             return Response(json.dumps("Password missing.", default=str), status=400, content_type="application/json")
+        if req_data.get('postcode', None) is None:
+            return Response(json.dumps("Postcode missing.", default=str), status=400, content_type="application/json")
+        postcode = req_data.pop('postcode')
 
         data = {}
         for k in req_data:
             if req_data[k] is not None:
-                # TODO check if data contains keys that do not correspond to any columns on the DB table
                 data[k] = req_data[k]
         column_name_list = []
         value_list = []
