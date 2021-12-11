@@ -59,7 +59,7 @@ def get_current_user():
 def users():
     if request.method == 'POST':  # create user
         req_data = request.get_json()
-        print(req_data)
+        # print(req_data)
         email = req_data.get('email', None)
         if email is None:
             return Response(json.dumps("Email missing.", default=str), status=400, content_type="application/json")

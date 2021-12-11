@@ -26,7 +26,7 @@ class UserResource(BaseRDBApplicationResource):
 
     @classmethod
     def exists_by_email(cls, email):
-        return len(RDBService.get_by_value("users", "user", "email", "'{}'".format(email))) > 0
+        return len(RDBService.get_by_value("users", "user", "email", email)) > 0
 
     @classmethod
     def get_user_id_by_email(cls, email):
@@ -39,7 +39,7 @@ class UserResource(BaseRDBApplicationResource):
     @classmethod
     def get_user_info_by_email_pwd(cls, email, pwd):
         res = RDBService.find_by_template("users", "user", {
-            'email': email,  # "'{}'".format(email),
+            'email': email,
             'password': pwd,
         }, ['userID', 'nameLast', 'nameFirst', 'email', 'gender'])
         if len(res):
