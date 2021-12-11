@@ -21,7 +21,7 @@ app = Flask(__name__)
 
 app.config['SECRET_KEY'] = security.SECRET_KEY
 # app.config['CORS_HEADERS'] = 'Content-Type'
-# client_id = "1093327178993-kbj68ghvsopafunmdk8rt1r6upt0oqdo.apps.googleusercontent.com"
+client_id = "1093327178993-kbj68ghvsopafunmdk8rt1r6upt0oqdo.apps.googleusercontent.com"
 # client_secret = "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"
 # os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 # os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
@@ -157,7 +157,8 @@ def auth_with_google():
                  generate_random_password()])
         # token = security.generate_auth_token({'user_id': user_id})   # TODO may generate token with a more complicated payload
         # return jsonify({'token': 'Bearer {}'.format(token.decode("utf-8"))})
-        return user_data
+        uid = UserResource.get_user_id_by_email(email)
+        return redirect('/api/users/{}'.format(uid))
     return redirect(url_for('google.login'))
 
 
