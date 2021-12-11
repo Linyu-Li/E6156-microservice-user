@@ -248,12 +248,19 @@ def get_weather(user_id):
 
     api_key = "e77746cf4f104a79a0e834cb44c84522"
     api_url = f"https://api.openweathermap.org/data/2.5/weather?zip={zip_code},us&units=imperial&appid={api_key}"
-    res = requests.get(api_url).json()
+    res = requests.get(api_url)
 
-    current_weather = res['weather'][0]['main']
-    current_temperature = "{0:.2f}".format(res["main"]["temp"])
-    name = res['name']
-    cod = res['cod']
+    if res.ok:
+        res = res.json()
+        current_weather = res['weather'][0]['main']
+        current_temperature = "{0:.2f}".format(res["main"]["temp"])
+        name = res['name']
+        cod = res['cod']
+    else:
+        name = ''
+        current_weather = '(unknown)'
+        current_temperature = '(unknown)'
+        cod = 200
 
     weather = {
         'location': name,
