@@ -77,7 +77,7 @@ def get_current_user():
 def users():
     if request.method == 'POST':  # create user
         req_data = request.get_json()
-        print(req_data)
+        # print(req_data)
         email = req_data.get('email', None)
         if email is None:
             return Response(json.dumps("Email missing.", default=str), status=400, content_type="application/json")
@@ -88,9 +88,19 @@ def users():
             return Response(json.dumps("Password missing.", default=str), status=400, content_type="application/json")
         if req_data.get('postcode', None) is None:
             return Response(json.dumps("Postcode missing.", default=str), status=400, content_type="application/json")
-        postcode = req_data.pop('postcode')
 
-        data = {}
+        postcode = req_data.pop('postcode')
+        street_address = req_data.pop('address', None)
+        if street_address:
+            existing_address = AddressResource.get_by_address(street_address)
+            if existing_address:
+                address_id = existing_address[0]['addressID']
+            else:
+                address_id = AddressResource.insert_address(('address', 'postalCode'), (street_address, postcode))
+        else:
+            address_id = AddressResource.insert_address(('postalCode', ), (postcode, ))
+
+        data = {'addressID': address_id}
         for k in req_data:
             if req_data[k] is not None:
                 data[k] = req_data[k]
@@ -102,7 +112,7 @@ def users():
         usr_id = UserResource.insert_users(column_name_list, value_list)
         rsp = Response(
             json.dumps(
-                f"User registered with userID {usr_id} (for debug only, do NOT show this in production!)", default=str),
+                f"User registered with userID {usr_id}!", default=str),
             status=201, content_type="application/json")
         return rsp
     elif request.method == 'GET':
@@ -292,7 +302,7 @@ def specific_address(address_id):
 
 # @app.before_request
 def check_valid_path():
-    if not request.path.startswith('/api/address') and request.path not in security.WHITELISTED_PATHS \
+    if not request.path.startswith('/api/address') and request.path in security.BLOCK_PATHS \
             and request.method != 'OPTIONS':
         if not security.check_path(request):
             return "Invalid token", 401

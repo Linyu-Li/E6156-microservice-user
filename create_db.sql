@@ -18,8 +18,8 @@ CREATE TABLE `user` (
 drop table if exists address;
 CREATE TABLE `address` (
   `addressID` int NOT NULL AUTO_INCREMENT,
-  `address` varchar(768) NOT NULL,
-  `postalCode` varchar(45) DEFAULT NULL,
+  `address` varchar(768) DEFAULT NULL,
+  `postalCode` varchar(45) NOT NULL,
   PRIMARY KEY (`addressID`),
   UNIQUE KEY `addresses_address_uindex` (`address`)
 );
