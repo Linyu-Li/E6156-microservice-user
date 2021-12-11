@@ -134,7 +134,11 @@ def auth():
         return Response(json.dumps("incorrect email and/or password.", default=str),
                         status=401, content_type="application/json")
     token = security.generate_auth_token({'userID': user_info['userID'], 'email': user_info['email']})
-    return jsonify({'token': '{}'.format(token), 'user': user_info})
+    return_data = {
+        'token': token,
+        'user': user_info
+    }
+    return json.dumps(return_data)
 
 
 # @app.route('/api/auth-google', methods=['GET'])
