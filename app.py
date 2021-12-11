@@ -20,19 +20,19 @@ logger.setLevel(logging.INFO)
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = security.SECRET_KEY
-# app.config['CORS_HEADERS'] = 'Content-Type'
+app.config['CORS_HEADERS'] = 'Content-Type'
 client_id = "1093327178993-kbj68ghvsopafunmdk8rt1r6upt0oqdo.apps.googleusercontent.com"
-# client_secret = "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"
-# os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-# os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
-# blueprint = make_google_blueprint(
-#     client_id=client_id,
-#     client_secret=client_secret,
-#     reprompt_consent=True,
-#     scope=["profile", "email"]
-# )
-# app.register_blueprint(blueprint, url_prefix="/login")
-# google_blueprint = app.blueprints.get("google")
+client_secret = "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"
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
+blueprint = make_google_blueprint(
+    client_id=client_id,
+    client_secret=client_secret,
+    reprompt_consent=True,
+    scope=["profile", "email"]
+)
+app.register_blueprint(blueprint, url_prefix="/login")
+google_blueprint = app.blueprints.get("google")
 PWD_CHARS = string.ascii_letters + string.digits + '!@#$%^&*()'
 
 CORS(app,
@@ -42,6 +42,24 @@ CORS(app,
 
 def generate_random_password():
     return ''.join(choice(PWD_CHARS) for _ in range(12))
+
+@app.route('/', methods=['GET'])
+def home():
+    if google.authorized:
+        user_data = google.get('oauth2/v2/userinfo').json()
+        email = user_data['email']
+        user_id = UserResource.get_user_id_by_email(email)
+        if user_id is None:
+            user_id = UserResource.insert_users(
+                ['email', 'nameFirst', 'nameLast', 'password'],
+                [email,
+                 user_data.get('given_name', None),
+                 user_data.get('family_name', None),
+                 generate_random_password()])
+        uid = UserResource.get_user_id_by_email(email)
+        return redirect('/api/users/{}'.format(uid["userID"]))
+    else:
+        return "Welcome to LionMatch"
 
 
 @app.route('/api/me', methods=['GET'])
@@ -158,7 +176,7 @@ def auth_with_google():
         # token = security.generate_auth_token({'user_id': user_id})   # TODO may generate token with a more complicated payload
         # return jsonify({'token': 'Bearer {}'.format(token.decode("utf-8"))})
         uid = UserResource.get_user_id_by_email(email)
-        return redirect('/api/users/{}'.format(uid))
+        return redirect('/api/users/{}'.format(uid["userID"]))
     return redirect(url_for('google.login'))
 
 
