@@ -215,12 +215,17 @@ def specific_user(user_id):
     elif request.method == 'PUT':
         req_data = request.get_json()
 
-        # Original: update user info, currently only support modifying one column at a time
-        # column_name = list(req_data.items())[0][0]
-        # value = list(req_data.items())[0][1]
-        # res = UserResource.update_field_by_uid(user_id, column_name, value)
-
-        # New: update user info multiple columns at a time
+        postcode = req_data.pop('postcode')
+        street_address = req_data.pop('address', None)
+        if street_address:
+            existing_address = AddressResource.get_by_address(street_address)
+            if existing_address:
+                address_id = existing_address[0]['addressID']
+            else:
+                address_id = AddressResource.insert_address(('address', 'postalCode'), (street_address, postcode))
+        else:
+            address_id = AddressResource.insert_address(('postalCode',), (postcode,))
+        req_data['addressID'] = address_id
         UserResource.update_fields_by_uid(user_id, **req_data)
 
         rsp = Response(json.dumps("Updated", default=str), status=200, content_type="application/json")
