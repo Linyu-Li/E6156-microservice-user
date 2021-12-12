@@ -17,8 +17,8 @@ class AddressResource(BaseRDBApplicationResource):
         return res
 
     @classmethod
-    def insert_address(cls, column_name_list, value_list): # db_schema, table_name, column_name_list, value_list
-        res = RDBService.insert("users", "address", column_name_list, value_list)
+    def insert_address(cls, column_name_list, value_list):  # db_schema, table_name, column_name_list, value_list
+        res = RDBService.insert("users", "address", column_name_list, value_list, return_id=True)
         return res
 
     @classmethod
@@ -26,6 +26,11 @@ class AddressResource(BaseRDBApplicationResource):
         res = RDBService.get_by_value("users", "address",
                                       "addressID", address_id)
         return res
+
+    @classmethod
+    def get_by_address(cls, address):
+        return RDBService.get_by_value("users", "address",
+                                       "address", address)
 
     @classmethod
     def update_by_aid(cls, address_id, column_name, value):

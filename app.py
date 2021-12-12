@@ -20,19 +20,19 @@ logger.setLevel(logging.INFO)
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = security.SECRET_KEY
-# app.config['CORS_HEADERS'] = 'Content-Type'
-# client_id = "1093327178993-kbj68ghvsopafunmdk8rt1r6upt0oqdo.apps.googleusercontent.com"
-# client_secret = "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"
-# os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-# os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
-# blueprint = make_google_blueprint(
-#     client_id=client_id,
-#     client_secret=client_secret,
-#     reprompt_consent=True,
-#     scope=["profile", "email"]
-# )
-# app.register_blueprint(blueprint, url_prefix="/login")
-# google_blueprint = app.blueprints.get("google")
+app.config['CORS_HEADERS'] = 'Content-Type'
+client_id = "1093327178993-kbj68ghvsopafunmdk8rt1r6upt0oqdo.apps.googleusercontent.com"
+client_secret = "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"
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
+blueprint = make_google_blueprint(
+    client_id=client_id,
+    client_secret=client_secret,
+    reprompt_consent=True,
+    scope=["profile", "email"]
+)
+app.register_blueprint(blueprint, url_prefix="/login")
+google_blueprint = app.blueprints.get("google")
 PWD_CHARS = string.ascii_letters + string.digits + '!@#$%^&*()'
 
 CORS(app,
@@ -42,6 +42,24 @@ CORS(app,
 
 def generate_random_password():
     return ''.join(choice(PWD_CHARS) for _ in range(12))
+
+@app.route('/', methods=['GET'])
+def home():
+    if google.authorized:
+        user_data = google.get('oauth2/v2/userinfo').json()
+        email = user_data['email']
+        user_id = UserResource.get_user_id_by_email(email)
+        if user_id is None:
+            user_id = UserResource.insert_users(
+                ['email', 'nameFirst', 'nameLast', 'password'],
+                [email,
+                 user_data.get('given_name', None),
+                 user_data.get('family_name', None),
+                 generate_random_password()])
+        uid = UserResource.get_user_id_by_email(email)
+        return redirect('/api/users/{}'.format(uid["userID"]))
+    else:
+        return "Welcome to LionMatch"
 
 
 @app.route('/api/me', methods=['GET'])
@@ -59,20 +77,32 @@ def get_current_user():
 def users():
     if request.method == 'POST':  # create user
         req_data = request.get_json()
+        # print(req_data)
         email = req_data.get('email', None)
         if email is None:
             return Response(json.dumps("Email missing.", default=str), status=400, content_type="application/json")
         if UserResource.exists_by_email(email):
             return Response(json.dumps("Email already registered. Please login or use another email.", default=str),
                             status=422, content_type="application/json")
-        # TODO encode password
         if req_data.get('password', None) is None:
             return Response(json.dumps("Password missing.", default=str), status=400, content_type="application/json")
+        if req_data.get('postcode', None) is None:
+            return Response(json.dumps("Postcode missing.", default=str), status=400, content_type="application/json")
 
-        data = {}
+        postcode = req_data.pop('postcode')
+        street_address = req_data.pop('address', None)
+        if street_address:
+            existing_address = AddressResource.get_by_address(street_address)
+            if existing_address:
+                address_id = existing_address[0]['addressID']
+            else:
+                address_id = AddressResource.insert_address(('address', 'postalCode'), (street_address, postcode))
+        else:
+            address_id = AddressResource.insert_address(('postalCode', ), (postcode, ))
+
+        data = {'addressID': address_id}
         for k in req_data:
             if req_data[k] is not None:
-                # TODO check if data contains keys that do not correspond to any columns on the DB table
                 data[k] = req_data[k]
         column_name_list = []
         value_list = []
@@ -82,7 +112,7 @@ def users():
         usr_id = UserResource.insert_users(column_name_list, value_list)
         rsp = Response(
             json.dumps(
-                f"User registered with userID {usr_id} (for debug only, do NOT show this in production!)", default=str),
+                f"User registered with userID {usr_id}!", default=str),
             status=201, content_type="application/json")
         return rsp
     elif request.method == 'GET':
@@ -104,42 +134,64 @@ def auth():
         return Response(json.dumps("incorrect email and/or password.", default=str),
                         status=401, content_type="application/json")
     token = security.generate_auth_token({'userID': user_info['userID'], 'email': user_info['email']})
-    return jsonify({'token': '{}'.format(token), 'user': user_info})
+    return_data = {
+        'token': token,
+        'user': user_info
+    }
+    return json.dumps(return_data)
 
-
-@app.route('/api/auth-google', methods=['GET'])
-def auth_with_google():
-    req_data = request.get_json()
-    email = req_data.get("email")
-    user_id = UserResource.get_user_id_by_email(email)
-    if user_id is None:
-        user_id = UserResource.insert_users(
-            ['email', 'nameFirst', 'nameLast', 'password'],
-            [email,
-             req_data.get('given_name', None),
-             req_data.get('family_name', None),
-             generate_random_password()])
-    # TODO may generate token with a more complicated payload
-    token = security.generate_auth_token({'userID': user_id, 'email': email})
-    return jsonify({'token': 'Bearer {}'.format(token)})
 
 # @app.route('/api/auth-google', methods=['GET'])
 # def auth_with_google():
-#     if google.authorized:
-#         user_data = google.get('oauth2/v2/userinfo').json()
-#         # token = blueprint.session.token
-#         email = user_data['email']
-#         user_id = UserResource.get_user_id_by_email(email)
-#         if user_id is None:
-#             user_id = UserResource.insert_users(
-#                 ['email', 'nameFirst', 'nameLast', 'password'],
-#                 [email,
-#                  user_data.get('given_name', None),
-#                  user_data.get('family_name', None),
-#                  generate_random_password()])
-#         token = generate_auth_token({'user_id': user_id})   # TODO may generate token with a more complicated payload
-#         return jsonify({'token': 'Bearer {}'.format(token.decode("utf-8"))})
-#     return redirect(url_for('google.login'))
+#     req_data = request.get_json()
+#     email = req_data.get("email")
+#     user_id = UserResource.get_user_id_by_email(email)
+#     if user_id is None:
+#         user_id = UserResource.insert_users(
+#             ['email', 'nameFirst', 'nameLast', 'password'],
+#             [email,
+#              req_data.get('given_name', None),
+#              req_data.get('family_name', None),
+#              generate_random_password()])
+#     # TODO may generate token with a more complicated payload
+#     token = security.generate_auth_token({'userID': user_id, 'email': email})
+#     return jsonify({'token': '{}'.format(token)})
+
+# @app.route('/api/auth-google', methods=['GET'])
+# def auth_with_google():
+#     req_data = request.get_json()
+#     email = req_data.get("email")
+#     user_id = UserResource.get_user_id_by_email(email)
+#     if user_id is None:
+#         user_id = UserResource.insert_users(
+#             ['email', 'nameFirst', 'nameLast', 'password'],
+#             [email,
+#              req_data.get('given_name', None),
+#              req_data.get('family_name', None),
+#              generate_random_password()])
+#     # TODO may generate token with a more complicated payload
+#     token = security.generate_auth_token({'userID': user_id, 'email': email})
+#     return jsonify({'token': 'Bearer {}'.format(token)})
+
+@app.route('/api/auth-google', methods=['GET'])
+def auth_with_google():
+    if google.authorized:
+        user_data = google.get('oauth2/v2/userinfo').json()
+        # token = blueprint.session.token
+        email = user_data['email']
+        user_id = UserResource.get_user_id_by_email(email)
+        if user_id is None:
+            user_id = UserResource.insert_users(
+                ['email', 'nameFirst', 'nameLast', 'password'],
+                [email,
+                 user_data.get('given_name', None),
+                 user_data.get('family_name', None),
+                 generate_random_password()])
+        # token = security.generate_auth_token({'user_id': user_id})   # TODO may generate token with a more complicated payload
+        # return jsonify({'token': 'Bearer {}'.format(token.decode("utf-8"))})
+        uid = UserResource.get_user_id_by_email(email)
+        return redirect('/api/users/{}'.format(uid["userID"]))
+    return redirect(url_for('google.login'))
 
 
 @app.route('/api/users/<user_id>', methods=['GET', 'PUT', 'DELETE'])
@@ -163,12 +215,17 @@ def specific_user(user_id):
     elif request.method == 'PUT':
         req_data = request.get_json()
 
-        # Original: update user info, currently only support modifying one column at a time
-        # column_name = list(req_data.items())[0][0]
-        # value = list(req_data.items())[0][1]
-        # res = UserResource.update_field_by_uid(user_id, column_name, value)
-
-        # New: update user info multiple columns at a time
+        postcode = req_data.pop('postcode')
+        street_address = req_data.pop('address', None)
+        if street_address:
+            existing_address = AddressResource.get_by_address(street_address)
+            if existing_address:
+                address_id = existing_address[0]['addressID']
+            else:
+                address_id = AddressResource.insert_address(('address', 'postalCode'), (street_address, postcode))
+        else:
+            address_id = AddressResource.insert_address(('postalCode',), (postcode,))
+        req_data['addressID'] = address_id
         UserResource.update_fields_by_uid(user_id, **req_data)
 
         rsp = Response(json.dumps("Updated", default=str), status=200, content_type="application/json")
@@ -191,12 +248,19 @@ def get_weather(user_id):
 
     api_key = "e77746cf4f104a79a0e834cb44c84522"
     api_url = f"https://api.openweathermap.org/data/2.5/weather?zip={zip_code},us&units=imperial&appid={api_key}"
-    res = requests.get(api_url).json()
+    res = requests.get(api_url)
 
-    current_weather = res['weather'][0]['main']
-    current_temperature = "{0:.2f}".format(res["main"]["temp"])
-    name = res['name']
-    cod = res['cod']
+    if res.ok:
+        res = res.json()
+        current_weather = res['weather'][0]['main']
+        current_temperature = "{0:.2f}".format(res["main"]["temp"])
+        name = res['name']
+        cod = res['cod']
+    else:
+        name = ''
+        current_weather = '(unknown)'
+        current_temperature = '(unknown)'
+        cod = 200
 
     weather = {
         'location': name,
@@ -252,18 +316,13 @@ def specific_address(address_id):
         return Response(json.dumps("wrong method", default=str), status=405, content_type="application/json")
 
 
-@app.before_request
+# @app.before_request
 def check_valid_path():
-    if request.path not in security.WHITELISTED_PATHS and request.method != 'OPTIONS':
-        # print("check_valid_path")
-        # print(request.path)
-        # print(request.endpoint)
-        # result_pass = security.check_path(request)
-        # print("result_pass: {}".format(result_pass))
+    if not request.path.startswith('/api/address') and request.path in security.BLOCK_PATHS \
+            and request.method != 'OPTIONS':
         if not security.check_path(request):
             return "Invalid token", 401
 
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5001)
-    # app.run(port=5000)

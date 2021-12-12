@@ -84,9 +84,12 @@ class RDBService:
 
         conn = RDBService._get_db_connection()
         cur = conn.cursor()
-
+        if isinstance(value, str):
+            value = f"'{str(value)}'"
+        else:
+            value = str(value)
         sql = "select * from " + db_schema + "." + table_name + " where " + \
-              column_name + " = " + str(value)
+              column_name + " = " + value
         print("SQL Statement = " + cur.mogrify(sql, None))
 
         res = cur.execute(sql)
